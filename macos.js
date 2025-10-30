@@ -68,10 +68,73 @@
     win.style.zIndex = String(maxZ + 1);
   }
 
+  // 视口边界收敛：确保窗口在容器内，避免产生滚动条
+  function clampWindowBounds(win, container){
+    try {
+      if (!win) return;
+      var c = container || (win.parentElement || document.body);
+      var cw = c.clientWidth, ch = c.clientHeight;
+      var ww = win.offsetWidth, wh = win.offsetHeight;
+      var cRect = c.getBoundingClientRect();
+      var rect = win.getBoundingClientRect();
+      var left = parseFloat(win.style.left);
+      var top = parseFloat(win.style.top);
+      if (isNaN(left)) left = rect.left - cRect.left;
+      if (isNaN(top)) top = rect.top - cRect.top;
+      left = Math.max(0, Math.min(cw - ww, left));
+      top = Math.max(0, Math.min(ch - wh, top));
+      win.style.left = left + 'px';
+      win.style.top = top + 'px';
+    } catch (e) { /* no-op */ }
+  }
+
+  function clampAllWindows(){
+    var container = document.querySelector('.macos-theme') || document.body;
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){
+      clampWindowBounds(w, container);
+    });
+  }
+
+  // 固定方形窗口尺寸收敛（默认 300x300，最小 230x230）
+  function applySquareSize(win){
+    if (!win) return;
+    var container = document.querySelector('.macos-theme') || document.body;
+    var cw = container.clientWidth, ch = container.clientHeight;
+    var target = 300; var minSize = 230;
+    var size = Math.max(minSize, Math.min(target, Math.min(cw, ch)));
+    win.style.width = size + 'px';
+    win.style.height = size + 'px';
+  }
+  function adjustFixedSquareWindows(){
+    var container = document.querySelector('.macos-theme') || document.body;
+    Array.from(document.querySelectorAll('.macos-window[data-fixed-square="true"]')).forEach(function(w){
+      applySquareSize(w);
+      clampWindowBounds(w, container);
+    });
+  }
+
+  // 在浏览器窗口尺寸变化时，先调整固定方形窗口的尺寸，再收敛所有窗口位置，防止越界
+  window.addEventListener('resize', function(){
+    requestAnimationFrame(function(){
+      adjustFixedSquareWindows();
+      clampAllWindows();
+    });
+  });
+
   // 拖拽（头部拖动）
   function makeDraggable(win){
     var header = win.querySelector('.window-header');
     var isDragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+    var dX = 0, dY = 0, rafId = null;
+
+    function scheduleApply(){
+      if (rafId) return;
+      rafId = requestAnimationFrame(function(){
+        rafId = null;
+        win.style.transform = 'translate3d(' + dX + 'px,' + dY + 'px,0)';
+      });
+    }
+
     header.addEventListener('mousedown', function(e){
       // 当点击窗口控制按钮时，不触发拖动
       if (e.target.closest('.window-controls') || e.target.closest('.window-control')) return;
@@ -81,29 +144,46 @@
       var rect = win.getBoundingClientRect();
       origLeft = rect.left - (win.parentElement.getBoundingClientRect().left);
       origTop = rect.top - (win.parentElement.getBoundingClientRect().top);
+      dX = 0; dY = 0;
+      win.style.willChange = 'transform';
       document.body.style.userSelect = 'none';
     });
+
     document.addEventListener('mousemove', function(e){
       if (!isDragging) return;
       var dx = e.clientX - startX; var dy = e.clientY - startY;
-      var newLeft = origLeft + dx; var newTop = origTop + dy;
       var container = win.parentElement;
       var maxLeft = container.clientWidth - win.offsetWidth;
       var maxTop = container.clientHeight - win.offsetHeight;
-      newLeft = Math.max(0, Math.min(maxLeft, newLeft));
-      newTop = Math.max(0, Math.min(maxTop, newTop));
-      win.style.left = newLeft + 'px';
-      win.style.top = newTop + 'px';
-      win.style.transform = 'none';
+      var newLeft = Math.max(0, Math.min(maxLeft, origLeft + dx));
+      var newTop = Math.max(0, Math.min(maxTop, origTop + dy));
+      dX = newLeft - origLeft;
+      dY = newTop - origTop;
+      scheduleApply();
+
       if (win.dataset.minimized === 'true'){
         win.dataset.preMinimizedTop = newTop + 'px';
         win.dataset.preMinimizedLeft = newLeft + 'px';
       }
     });
+
     document.addEventListener('mouseup', function(){
       if (isDragging){
         isDragging = false;
         document.body.style.userSelect = '';
+        // 提交最终位置并清理 transform，并再次进行边界约束
+        var finalLeft = origLeft + dX;
+        var finalTop = origTop + dY;
+        var container = win.parentElement;
+        var maxLeft = container.clientWidth - win.offsetWidth;
+        var maxTop = container.clientHeight - win.offsetHeight;
+        finalLeft = Math.max(0, Math.min(maxLeft, finalLeft));
+        finalTop = Math.max(0, Math.min(maxTop, finalTop));
+        win.style.transform = 'none';
+        win.style.willChange = '';
+        win.style.left = finalLeft + 'px';
+        win.style.top = finalTop + 'px';
+        dX = 0; dY = 0;
       }
     });
   }
@@ -264,17 +344,32 @@ function openSurvivalGuideWindow(){
   var posts = Array.isArray(window.__MACOS_POSTS__) ? window.__MACOS_POSTS__ : [];
   // 计算徽标并排序：先数量降序，其次权重（TOP>HOT>NEW），最后日期倒序
   (function(){
-    function norm(x){ if (typeof x === 'string') return x.toLowerCase(); if (x && typeof x.name === 'string') return String(x.name).toLowerCase(); return ''; }
+    function norm(x){
+      var s = '';
+      if (typeof x === 'string') s = x; else if (x && typeof x.name === 'string') s = String(x.name); else return '';
+      s = s.toLowerCase();
+      // 归一化：去掉标点/符号/emoji，统一为空格分隔
+      try { s = s.replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); } catch (e) { s = s.replace(/[^a-z0-9]+/g, ' ').trim(); }
+      // 常见近义词归并
+      s = s.replace(/置顶文章|文章置顶|精选推荐/g, '置顶');
+      s = s.replace(/热门文章|热榜|人气|爆款|流行|趋势/g, '热门');
+      return s;
+    }
     function labelsFrom(p){
       var tagList = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? [p.tags] : []);
       var catList = Array.isArray(p.categories) ? p.categories : (typeof p.categories === 'string' ? [p.categories] : []);
-      return tagList.concat(catList).map(norm).filter(Boolean);
+      var titleTokens = (p.title ? norm(p.title).split(/\s+/).filter(Boolean) : []);
+      return tagList.concat(catList).map(norm).filter(Boolean).concat(titleTokens);
     }
     function computeFlags(p){
       var labels = labelsFrom(p);
-      function hasAny(needles){ return needles.some(function(n){ return labels.indexOf(n) >= 0; }); }
-      var isTop = !!(p.top || p.featured) || hasAny(['top','置顶','pinned','featured','精选']);
-      var isHot = !!(p.hot || p.popular) || hasAny(['hot','热门','popular','trend','trending','热度']);
+      var needlesTop = ['top','置顶','pinned','featured','精选'];
+      var needlesHot = ['hot','热门','popular','trend','trending','热度','人气','热榜','爆款'];
+      function hasAny(needles){
+        return labels.some(function(l){ return needles.some(function(n){ return l === n || l.indexOf(n) >= 0; }); });
+      }
+      var isTop = !!(p.top || p.featured) || hasAny(needlesTop);
+      var isHot = !!(p.hot || p.popular) || hasAny(needlesHot);
       var isNew = false; var pd = Date.parse(p.date || '');
       if (!isNaN(pd)){ var days = (Date.now() - pd) / (1000*60*60*24); if (days <= 10) isNew = true; }
       var count = (isTop?1:0) + (isHot?1:0) + (isNew?1:0);
@@ -540,9 +635,20 @@ function openAboutMeWindows(){
   var container = document.querySelector('.macos-theme') || document.body;
   var cw = container.clientWidth, ch = container.clientHeight;
   function createFixedWindow(title, contentHTML, xPercent, yPercent, z){
-    var win = createWindow({ title: title, contentHTML: contentHTML, width: 300, height: 230 });
-    var left = Math.max(0, Math.min(cw - 300, Math.round(cw * (xPercent/100))));
-    var top = Math.max(0, Math.min(ch - 230, Math.round(ch * (yPercent/100))));
+    // 初始设为 300x300 方形
+    var win = createWindow({ title: title, contentHTML: contentHTML, width: 300, height: 300 });
+    win.dataset.fixedSquare = 'true';
+
+    // 根据视口大小对 300x300 进行收敛（不小于 230x230）
+    applySquareSize(win);
+
+    // 使用渲染后尺寸进行边界约束与初始定位
+    var ww = win.offsetWidth;
+    var wh = win.offsetHeight;
+    var leftTarget = Math.round(cw * (xPercent/100));
+    var topTarget = Math.round(ch * (yPercent/100));
+    var left = Math.max(0, Math.min(cw - ww, leftTarget));
+    var top = Math.max(0, Math.min(ch - wh, topTarget));
     win.style.left = left + 'px';
     win.style.top = top + 'px';
     if (z) win.style.zIndex = String(z);
@@ -551,14 +657,24 @@ function openAboutMeWindows(){
   // Portfolio Showcase（图片展示）
   createFixedWindow('Portfolio Showcase',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="/images/Wenjian.svg" alt="Portfolio Showcase" style="max-width:100%; max-height:100%; object-fit:contain;">\
+      <img src="/images/cat.svg" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 5, 25, 1001);
   // About Me（文本）
-  createFixedWindow('About Me', '<p>Hello world!</p>', 15, 15, 1003);
+  createFixedWindow('About Me', `
+    <div class="about-me-content">
+      <div class="about-me-title">Hello！！我是 WANG''，你好！！地球村的良民~</div>
+      <ul class="about-me-list">
+        <li>纯<span class="highlight">AI</span>搭建的网站，加上一缪缪自己的审美（<span class="accent">yes~</span>）</li>
+        <li>建议不要问关于代码的问题，因为我<span class="accent">真不知道</span>！</li>
+        <li>目前开发的APP只有“<span class="highlight">相册</span>”和“<span class="highlight">Survival Guide</span>”，我管这个叫生存指南，其实就是博客文章；相册有自己跑的<span class="accent">AIGC</span>随便吃，要神秘代码可以找我~</li>
+        <li>随心情建设网站（<span class="warn">下雨天不更！！</span>）</li>
+      </ul>
+    </div>
+  `, 15, 15, 1003);
   // Design Cases（图片展示）
   createFixedWindow('Design Cases',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="/images/app.svg" alt="Design Cases" style="max-width:100%; max-height:100%; object-fit:contain;">\
+      <img src="/images/cat-2.svg" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 22, 40, 1002);
 }
 
@@ -700,7 +816,7 @@ function openPhotosWindow(){
     return list.map(function(item, idx){
       var obj = (typeof item === 'string') ? { url: item } : (item || {});
       var url = obj.url || '';
-      var title = labelFor(url, section, idx);
+      var title = (obj.name && String(obj.name).trim()) || labelFor(url, section, idx);
       var info = urlToPrimaryInfo[url];
       var defaultSensitive = nsfwSet.size === 0 && ((info && info.cat === 'aigc' && info.idx === 1) || (section === 'aigc' && idx === 1));
       var isSensitive = !!obj.nsfw || nsfwSet.has(url) || defaultSensitive;
@@ -712,7 +828,7 @@ function openPhotosWindow(){
       var favBadgeHTML = showFav ? '  <div class="fav-badge" style="pointer-events:none; position:absolute; top:6px; right:6px; color:#1677ff; font-size:20px; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,0.18);">♥</div>' : '';
       return [
         '<div '+cellAttrs+' style="aspect-ratio:1/1; background-color:#f0f0f0; border-radius:6px; overflow:hidden; position:relative; cursor:zoom-in;">',
-        '  <img src="'+url+'" style="width:100%; height:100%; object-fit:cover; display:block; '+imgExtra+'" />',
+        '  <img src="'+url+'" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover; display:block; '+imgExtra+'" />',
         (isSensitive ? '  <div class="blur-mask" style="position:absolute; inset:0; border-radius:inherit; background:rgba(0,0,0,0.35); backdrop-filter: blur(3px); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px;">NSFW</div>' : ''),
         newBadgeHTML,
         favBadgeHTML,

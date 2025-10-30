@@ -81,7 +81,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .macos-theme .macos-window {
   position: absolute;
   width: 400px;
-  min-height: 300px;
+  min-height: 230px;
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -110,7 +110,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .macos-theme .window-control.maximize { background-color: #27c93f; }
 .macos-theme .window-title { flex: 1; text-align: center; font-size: 13px; color: #333; }
 .macos-theme .window-content {
-  flex: 1; padding: 20px; font-size: 14px; line-height: 1.5; overflow-y: auto;
+  flex: 1; padding: 12px 20px 20px; font-size: 14px; line-height: 1.5; overflow-y: auto;
   -ms-overflow-style: none; scrollbar-width: none;
 }
 .macos-theme .window-content::-webkit-scrollbar { display: none; }
@@ -250,3 +250,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
   border: 1px solid #D62A22;
   box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25);
 }
+.macos-theme .about-me-content { font-size: 15px; line-height: 1.7; color: #333; }
+.macos-theme .about-me-title { font-weight: 600; color: #007aff; margin-bottom: 8px; }
+.macos-theme .about-me-list { margin: 0; padding-left: 18px; list-style: disc; }
+.macos-theme .about-me-list li { margin: 6px 0; }
+.macos-theme .about-me-content .highlight { background: #007aff; color: #ffffff; border-radius: 4px; padding: 0 4px; }
+.macos-theme .about-me-content .accent { color: #007aff; font-weight: 600; }
+.macos-theme .about-me-content .warn { color: #ff3b30; font-weight: 600; text-decoration: line-through; text-decoration-thickness: 2px; }
