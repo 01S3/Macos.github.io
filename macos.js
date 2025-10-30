@@ -657,7 +657,7 @@ function openAboutMeWindows(){
   // Portfolio Showcase（图片展示）
   createFixedWindow('Portfolio Showcase',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="/images/cat.svg" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
+      <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat.svg') : '/images/cat.svg') + '" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 5, 25, 1001);
   // About Me（文本）
   createFixedWindow('About Me', `
@@ -674,7 +674,7 @@ function openAboutMeWindows(){
   // Design Cases（图片展示）
   createFixedWindow('Design Cases',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="/images/cat-2.svg" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
+      <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat-2.svg') : '/images/cat-2.svg') + '" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 22, 40, 1002);
 }
 
