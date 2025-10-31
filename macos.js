@@ -196,7 +196,18 @@
     var content = win.querySelector('.window-content');
 
     if (btnClose){
-      btnClose.addEventListener('click', function(){ win.remove(); });
+      btnClose.addEventListener('click', function(){
+        win.remove();
+        // 移动端：若已无任何窗口，恢复显示便签
+        if (window.innerWidth <= 768){
+          var note = document.querySelector('.sticky-note');
+          if (note){
+            if (document.querySelectorAll('.macos-window').length === 0){
+              note.style.display = '';
+            }
+          }
+        }
+      });
     }
     if (btnMin){
       btnMin.addEventListener('click', function(){
@@ -321,6 +332,11 @@
     bringToFront(win);
     makeDraggable(win);
     wireControls(win);
+    // 移动端：任意窗口出现时隐藏便签
+    if (window.innerWidth <= 768){
+      var note = document.querySelector('.sticky-note');
+      if (note) note.style.display = 'none';
+    }
     return win;
   }
 
@@ -338,6 +354,10 @@ function openAboutWindow(){
 
 // Survival Guide 窗口内容（迁自原页面的精简版本）
 function openSurvivalGuideWindow(){
+  // 移动端：打开文章列表时，先关闭其他窗口，确保不并存
+  if (window.innerWidth <= 768){
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){ w.remove(); });
+  }
   var existing = document.getElementById('article-list-window');
   if (existing){ bringToFront(existing); return; }
 
@@ -404,10 +424,11 @@ function openSurvivalGuideWindow(){
       if (p.__isTop) badges.push('TOP');
       if (p.__isHot) badges.push('HOT');
       var badgesHTML = badges.map(function(b){ return '<span class="mac-badge mac-badge-'+b.toLowerCase()+'">'+b+'</span>'; }).join('');
+      var titleActive = idx === 0 ? 'color:#1e66ff;' : '';
       return [
         '<div class="article-item" data-url="'+p.url+'" data-index="'+idx+'" data-title="'+full+'" data-date="'+date+'"',
         '     style="padding:10px; cursor:pointer; '+active+'">',
-        '  <div class="article-title" style="font-size:13px; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+short+'</div>',
+        '  <div class="article-title" style="'+titleActive+'font-size:13px; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+short+'</div>',
         '  <div class="article-meta-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">',
         '    <div class="article-meta" style="color:#888; font-size:11px;">'+metaText+'</div>',
         '    <div class="article-badges" style="display:flex; gap:4px;">'+badgesHTML+'</div>',
@@ -465,7 +486,16 @@ function openSurvivalGuideWindow(){
   // 保持窗口可调整大小与原有约束
   win.style.resize = 'both';
   win.style.overflow = 'auto';
-  win.style.minWidth = '400px';
+  if (window.innerWidth <= 768){
+    var container = document.querySelector('.macos-theme') || document.body;
+    var mobileW = Math.round(container.clientWidth * 0.9);
+    win.style.width = mobileW + 'px';
+    win.style.minWidth = mobileW + 'px';
+    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
+    win.style.left = left + 'px';
+  } else {
+    win.style.minWidth = '400px';
+  }
   win.style.minHeight = (400/ (800/600)) + 'px';
 
   var contentEl = win.querySelector('.window-content');
@@ -473,6 +503,98 @@ function openSurvivalGuideWindow(){
     contentEl.style.display = 'flex';
     contentEl.style.padding = '0';
     contentEl.style.height = 'calc(100% - 32px)';
+    // 移动端：侧栏可折叠为玻璃态把手，扩大正文区域
+    contentEl.style.position = 'relative';
+    var sidebar = contentEl.children[0];
+    var rightPane = contentEl.children[1];
+    if (window.innerWidth <= 768 && sidebar && rightPane){
+      var baseWidth = 250; // 原始侧栏宽度
+      var collapsed = false; // 默认展开，便于首次浏览标题
+      rightPane.style.flex = '1';
+      // 将左侧面板改为悬浮抽屉，铺在正文上方
+      sidebar.style.position = 'absolute';
+      sidebar.style.left = '0';
+      sidebar.style.top = '0';
+      sidebar.style.height = '100%';
+      sidebar.style.width = baseWidth + 'px';
+      sidebar.style.zIndex = '20';
+      sidebar.style.background = 'rgba(245,245,245,0.6)';
+      sidebar.style.backdropFilter = 'blur(12px)';
+      sidebar.style.webkitBackdropFilter = 'blur(12px)';
+      sidebar.style.boxShadow = '0 10px 30px rgba(0,0,0,0.08)';
+      sidebar.style.borderRight = '1px solid #d1d1d1';
+      sidebar.style.transition = 'transform 0.25s ease';
+      sidebar.style.transform = 'translateX(0)';
+      sidebar.style.pointerEvents = 'auto';
+      // 玻璃态把手
+      var toggle = document.createElement('button');
+      toggle.setAttribute('aria-label','Toggle sidebar');
+      toggle.style.position = 'absolute';
+      toggle.style.top = '50%';
+      toggle.style.left = '0';
+      toggle.style.transform = 'translateY(-50%)';
+      toggle.style.width = '18px';
+      toggle.style.height = '56px';
+      toggle.style.border = '1px solid #d1d1d1';
+      toggle.style.borderLeft = 'none';
+      toggle.style.borderTopRightRadius = '10px';
+      toggle.style.borderBottomRightRadius = '10px';
+      toggle.style.background = 'rgba(245,245,245,0.6)';
+      toggle.style.backdropFilter = 'blur(10px)';
+      toggle.style.webkitBackdropFilter = 'blur(10px)';
+      toggle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+      toggle.style.cursor = 'pointer';
+      toggle.style.display = 'flex';
+      toggle.style.alignItems = 'center';
+      toggle.style.justifyContent = 'center';
+      toggle.style.zIndex = '30';
+      toggle.style.color = '#666';
+      toggle.style.fontSize = '16px';
+      toggle.textContent = '‹';
+      contentEl.appendChild(toggle);
+      // 根据初始展开状态控制把手显示
+      toggle.style.display = collapsed ? 'flex' : 'none';
+      // 透明遮罩，用于点击空白处收起抽屉
+      var mask = document.createElement('div');
+      mask.style.position = 'absolute';
+      mask.style.left = baseWidth + 'px';
+      mask.style.top = '0';
+      mask.style.width = 'calc(100% - '+baseWidth+'px)';
+      mask.style.height = '100%';
+      mask.style.background = 'transparent';
+      mask.style.zIndex = '25';
+      mask.style.display = collapsed ? 'none' : 'block';
+      contentEl.appendChild(mask);
+      function collapseSidebar(){
+        collapsed = true;
+        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.pointerEvents = 'none';
+        toggle.textContent = '›';
+        toggle.style.display = 'flex';
+        toggle.style.left = '0px';
+        mask.style.display = 'none';
+      }
+      function expandSidebar(){
+        collapsed = false;
+        sidebar.style.transform = 'translateX(0)';
+        sidebar.style.pointerEvents = 'auto';
+        toggle.textContent = '‹';
+        toggle.style.display = 'none';
+        toggle.style.left = '0px';
+        mask.style.display = 'block';
+      }
+      win._mobileSidebarControls = { collapseSidebar: collapseSidebar, expandSidebar: expandSidebar };
+      toggle.addEventListener('click', function(){
+        if (collapsed){
+          expandSidebar();
+        } else {
+          collapseSidebar();
+        }
+      });
+      mask.addEventListener('click', function(){
+        if (!collapsed){ collapseSidebar(); }
+      });
+    }
   }
 
   // 注入 iframe 字体栈，确保中文注释与代码块使用无衬线字体
@@ -509,8 +631,13 @@ function openSurvivalGuideWindow(){
   var items = win.querySelectorAll('.article-item');
   items.forEach(function(item){
     item.addEventListener('click', function(){
-      items.forEach(function(i){ i.style.backgroundColor = ''; });
+      items.forEach(function(i){ 
+        i.style.backgroundColor = ''; 
+        var t0 = i.querySelector('.article-title'); if (t0) t0.style.color = '';
+      });
       item.style.backgroundColor = '#e8e8e8';
+      var t1 = item.querySelector('.article-title'); if (t1) t1.style.color = '#1e66ff';
+      if (window.innerWidth <= 768 && win._mobileSidebarControls){ try { win._mobileSidebarControls.collapseSidebar(); } catch (e) {} }
       var url = item.getAttribute('data-url');
       var idx = parseInt(item.getAttribute('data-index') || '0', 10);
       var post = posts[idx];
@@ -622,9 +749,12 @@ function openSurvivalGuideWindow(){
 
 // About 图标绑定（后续可改为多窗口版本）
 function openAboutMeWindows(){
-  // 清理此前创建的 About 相关窗口
-  Array.from(document.querySelectorAll('.macos-window'))
-    .forEach(function(w){
+  // 移动端：点击 About 时只保留当前窗口集合，先清空其他弹窗
+  if (window.innerWidth <= 768){
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){ w.remove(); });
+  } else {
+    // 桌面端：仅清理此前创建的 About 相关窗口，保留其他窗口
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){
       var t = w.querySelector('.window-title');
       if (!t) return;
       var name = t.textContent.trim();
@@ -632,6 +762,7 @@ function openAboutMeWindows(){
         w.remove();
       }
     });
+  }
   var container = document.querySelector('.macos-theme') || document.body;
   var cw = container.clientWidth, ch = container.clientHeight;
   function createFixedWindow(title, contentHTML, xPercent, yPercent, z){
@@ -655,12 +786,12 @@ function openAboutMeWindows(){
     return win;
   }
   // Portfolio Showcase（图片展示）
-  createFixedWindow('Portfolio Showcase',
+  var wPortfolio = createFixedWindow('Portfolio Showcase',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
       <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat.svg') : '/images/cat.svg') + '" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 5, 25, 1001);
   // About Me（文本）
-  createFixedWindow('About Me', `
+  var wAbout = createFixedWindow('About Me', `
     <div class="about-me-content">
       <div class="about-me-title">Hello！！我是 WANG''，你好！！地球村的良民~</div>
       <ul class="about-me-list">
@@ -672,11 +803,107 @@ function openAboutMeWindows(){
     </div>
   `, 15, 15, 1003);
   // Design Cases（图片展示）
-  createFixedWindow('Design Cases',
+  var wDesign = createFixedWindow('Design Cases',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
       <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat-2.svg') : '/images/cat-2.svg') + '" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
     </div>', 22, 40, 1002);
+
+  // 移动端：将三个窗口改为抽屉式居中排列，点击标题展开其余折叠
+  if (window.innerWidth <= 768){
+    var wins = [wAbout, wPortfolio, wDesign];
+    function layoutMobileDrawer(selectedWin){
+      var container = document.querySelector('.macos-theme') || document.body;
+      var bar = document.querySelector('.menu-bar');
+      var dock = document.querySelector('.dock');
+      var barH = (bar && bar.offsetHeight) || 22;
+      var dockH = (dock ? dock.getBoundingClientRect().height : 0);
+      var marginTop = 8, marginBottom = 14, gap = 5;
+      var headerH = (wins[0] && wins[0].querySelector('.window-header') ? wins[0].querySelector('.window-header').offsetHeight : 32);
+      var collapsedH = headerH; // 折叠状态高度与标题栏一致，避免露白边
+      var availableH = container.clientHeight - barH - dockH - marginTop - marginBottom;
+      var expandedH = Math.max(180, Math.min(availableH, Math.round(container.clientHeight * 0.55))); // 保持舒适阅读
+      var width = Math.round(container.clientWidth * 0.9);
+      var left = Math.round((container.clientWidth - width) / 2);
+      var top = barH + marginTop;
+      wins.forEach(function(win){
+        if (!win) return;
+        win.dataset.mobile = 'drawer';
+        win.style.transform = 'none';
+        win.style.left = left + 'px';
+        win.style.width = width + 'px';
+        win.style.zIndex = '1000';
+        var content = win.querySelector('.window-content');
+        var isSelected = (win === selectedWin);
+        if (isSelected){
+          win.dataset.collapsed = 'false';
+          if (content) content.style.display = 'block';
+          win.style.height = expandedH + 'px';
+        } else {
+          win.dataset.collapsed = 'true';
+          if (content) content.style.display = 'none';
+          win.style.height = collapsedH + 'px';
+        }
+        win.style.top = top + 'px';
+        top += (isSelected ? expandedH : collapsedH) + gap;
+      });
+    }
+    function headerClickable(win){
+      var header = win && win.querySelector('.window-header');
+      if (!header) return;
+      header.addEventListener('click', function(e){
+        if (e.target.closest('.window-controls')) return; // 忽略控制按钮
+        layoutMobileDrawer(win);
+      });
+    }
+    wins.forEach(headerClickable);
+    // 绿色放大按钮：在移动端抽屉模式下充当“展开”动作
+    function attachMaximizeExpand(win){
+      var btnMax = win && win.querySelector('.window-control.maximize');
+      if (!btnMax) return;
+      btnMax.addEventListener('click', function(e){
+        e.stopPropagation();
+        e.preventDefault();
+        layoutMobileDrawer(win);
+      });
+    }
+    wins.forEach(attachMaximizeExpand);
+    // 黄色最小化按钮：在移动端抽屉模式下充当“折叠”动作（全部折叠）
+    function attachMinimizeCollapse(win){
+      var btnMin = win && win.querySelector('.window-control.minimize');
+      if (!btnMin) return;
+      btnMin.addEventListener('click', function(e){
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        layoutMobileDrawer(null); // 不选中任何窗口，全部保持折叠
+      });
+    }
+    wins.forEach(attachMinimizeCollapse);
+    layoutMobileDrawer(wAbout);
+  }
 }
+
+// 移动端：按视口宽度等比例缩放 Dock，保证完整显示
+function scaleDockToFit(){
+  var dock = document.querySelector('.dock');
+  if (!dock) return;
+  var vw = document.documentElement.clientWidth || window.innerWidth;
+  var margin = 16; // 两侧安全边距
+  // 重置以测量自然宽度
+  dock.style.transform = 'translateX(-50%)';
+  var naturalWidth = dock.scrollWidth;
+  var maxWidth = Math.max(0, vw - margin * 2);
+  if (vw <= 768 && naturalWidth > maxWidth){
+    var scale = maxWidth / naturalWidth;
+    dock.style.transformOrigin = 'center bottom';
+    dock.style.transform = 'translateX(-50%) scale(' + scale + ')';
+  } else {
+    dock.style.transform = 'translateX(-50%)';
+  }
+}
+
+// 初始与窗口尺寸变化时缩放
+scaleDockToFit();
+window.addEventListener('resize', scaleDockToFit);
 
 // 语言切换（示例）
 function initLanguageToggle(){
@@ -712,6 +939,13 @@ function initLanguageToggle(){
 
 function openPhotosWindow(){
   var existing = document.getElementById('photos-window');
+  // 移动端：打开相册时关闭其他窗口，保持与其它窗口逻辑一致
+  if (window.innerWidth <= 768){
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){
+      if (existing && w === existing) return;
+      w.remove();
+    });
+  }
   if (existing){ bringToFront(existing); return; }
 
   var toggle = document.querySelector('#language-toggle');
@@ -735,7 +969,7 @@ function openPhotosWindow(){
     '  <div style="width:200px; border-right:1px solid #d1d1d1; background-color:#f5f5f5; display:flex; flex-direction:column;">',
     '    <div style="padding:10px; font-weight:500; color:#666; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">'+categoryTitle+'</div>',
     '    <div style="flex:1; overflow-y:auto;">',
-    '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; background-color:#e8e8e8; color:#000;" class="photo-nav-item" data-section="photos">'+landscapesText+'</div>',
+    '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; background-color:#e8e8e8; color:#0a84ff;" class="photo-nav-item" data-section="photos">'+landscapesText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="people">'+peopleText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="projects">'+projectsText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="aigc">'+aigcText+'</div>',
@@ -770,6 +1004,108 @@ function openPhotosWindow(){
     contentEl.style.display = 'flex';
     contentEl.style.padding = '0';
     contentEl.style.height = 'calc(100% - 32px)';
+  }
+
+  // 移动端：窗口宽度 90%，居中；左侧相册栏改为悬浮折叠抽屉（与文章列表一致）
+  if (window.innerWidth <= 768){
+    var container = document.querySelector('.macos-theme') || document.body;
+    var mobileW = Math.round(container.clientWidth * 0.9);
+    win.style.width = mobileW + 'px';
+    win.style.minWidth = mobileW + 'px';
+    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
+    win.style.left = left + 'px';
+  }
+  if (contentEl){
+    contentEl.style.position = 'relative';
+    var sidebar = contentEl.children[0];
+    var rightPane = contentEl.children[1];
+    if (window.innerWidth <= 768 && sidebar && rightPane){
+      var baseWidth = 200; // 相册侧栏原始宽度
+      var collapsed = false; // 默认展开，保持初次浏览体验
+      rightPane.style.flex = '1';
+      sidebar.style.position = 'absolute';
+      sidebar.style.left = '0';
+      sidebar.style.top = '0';
+      sidebar.style.height = '100%';
+      sidebar.style.width = baseWidth + 'px';
+      sidebar.style.zIndex = '20';
+      sidebar.style.background = 'rgba(245,245,245,0.6)';
+      sidebar.style.backdropFilter = 'blur(12px)';
+      sidebar.style.webkitBackdropFilter = 'blur(12px)';
+      sidebar.style.boxShadow = '0 10px 30px rgba(0,0,0,0.08)';
+      sidebar.style.borderRight = '1px solid #d1d1d1';
+      sidebar.style.transition = 'transform 0.25s ease';
+      sidebar.style.transform = 'translateX(0)';
+      sidebar.style.pointerEvents = 'auto';
+
+      var mask = document.createElement('div');
+      mask.style.position = 'absolute';
+      mask.style.left = baseWidth + 'px';
+      mask.style.top = '0';
+      mask.style.width = 'calc(100% - '+baseWidth+'px)';
+      mask.style.height = '100%';
+      mask.style.background = 'transparent';
+      mask.style.zIndex = '25';
+      mask.style.display = 'block';
+      contentEl.appendChild(mask);
+
+      var toggle = document.createElement('div');
+      toggle.className = 'mobile-sidebar-toggle';
+      toggle.textContent = '‹';
+      toggle.style.position = 'absolute';
+      toggle.style.left = '0px';
+      toggle.style.top = '50%';
+      toggle.style.transform = 'translateY(-50%)';
+      toggle.style.width = '18px';
+      toggle.style.height = '56px';
+      toggle.style.display = 'none';
+      toggle.style.alignItems = 'center';
+      toggle.style.justifyContent = 'center';
+      toggle.style.border = '1px solid #d1d1d1';
+      toggle.style.borderLeft = 'none';
+      toggle.style.borderRadius = '0 10px 10px 0';
+      toggle.style.background = 'rgba(245,245,245,0.6)';
+      toggle.style.backdropFilter = 'blur(10px)';
+      toggle.style.webkitBackdropFilter = 'blur(10px)';
+      toggle.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+      toggle.style.color = '#666';
+      toggle.style.fontSize = '16px';
+      toggle.style.lineHeight = '56px';
+      toggle.style.cursor = 'pointer';
+      toggle.style.zIndex = '30';
+      contentEl.appendChild(toggle);
+
+      function collapseSidebar(){
+        collapsed = true;
+        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.pointerEvents = 'none';
+        toggle.textContent = '›';
+        toggle.style.display = 'flex';
+        mask.style.display = 'none';
+      }
+      function expandSidebar(){
+        collapsed = false;
+        sidebar.style.transform = 'translateX(0)';
+        sidebar.style.pointerEvents = 'auto';
+        toggle.textContent = '‹';
+        toggle.style.display = 'none';
+        mask.style.display = 'block';
+      }
+
+      // 初始展开：隐藏把手；折叠后显示
+      toggle.style.display = collapsed ? 'flex' : 'none';
+
+      toggle.addEventListener('click', function(){
+        if (collapsed){
+          expandSidebar();
+        } else {
+          collapseSidebar();
+        }
+      });
+      mask.addEventListener('click', function(){
+        if (!collapsed){ collapseSidebar(); }
+      });
+    }
   }
 
   var photoNavItems = win.querySelectorAll('.photo-nav-item');
@@ -882,10 +1218,13 @@ function openPhotosWindow(){
 
   photoNavItems.forEach(function(item){
     item.addEventListener('click', function(){
-      photoNavItems.forEach(function(i){ i.style.backgroundColor = ''; });
+      photoNavItems.forEach(function(i){ i.style.backgroundColor = ''; i.style.color = '#000'; });
       item.style.backgroundColor = '#e8e8e8';
+      item.style.color = '#0a84ff';
       var section = item.getAttribute('data-section') || 'all-photos';
       updatePhotoContent(section);
+      // 选中后自动折叠侧栏（移动端/窄屏体验更佳）
+      if (typeof collapseSidebar === 'function') { collapseSidebar(); }
     });
   });
 
@@ -959,7 +1298,7 @@ function bindDockIcons(){
   });
 }
 
-// 绑定桌面图标（About Me / Survival Guide）
+// 绑定桌面图标（About Me / Survival Guide / Empty Secret / Trash）
 function bindDesktopIcons(){
   var icons = document.querySelectorAll('.desktop-icons .icon');
   icons.forEach(function(icon){
@@ -974,6 +1313,14 @@ function bindDesktopIcons(){
     // Survival Guide（含可能的别名 Project 1 / 指南）
     else if (name === 'Survival Guide' || name === 'Project 1' || name === '指南'){
       icon.addEventListener('click', openSurvivalGuideWindow);
+    }
+    // Empty Secret（含中文别名）
+    else if (name === 'Empty Secret' || name === '空白的秘密'){
+      icon.addEventListener('click', openEmptySecretWindow);
+    }
+    // Trash（含中文别名）
+    else if (name === 'Trash' || name === '垃圾桶'){
+      icon.addEventListener('click', openTrashWindow);
     }
   });
 }
@@ -1050,6 +1397,81 @@ function initTypewriterWelcome(){
   }, 500);
 }
 
+// 移动端汉堡菜单交互（需在 IIFE 内，便于调用内部窗口函数）
+function initMobileMenu(){
+  var btn = document.getElementById('mobileHamburger');
+  var menu = document.getElementById('mobileMenu');
+  var btnClose = document.getElementById('mobileMenuClose');
+  if (!btn || !menu) return;
+  function open(){ menu.classList.add('open'); }
+  function close(){ menu.classList.remove('open'); }
+  btn.addEventListener('click', open);
+  if (btnClose) btnClose.addEventListener('click', close);
+  menu.addEventListener('click', function(e){ if (e.target === menu) close(); });
+  var items = menu.querySelectorAll('.mobile-menu-list li');
+  items.forEach(function(li){
+    li.addEventListener('click', function(){
+      // 选中态：文字改为蓝色，其余恢复
+      items.forEach(function(i){ i.classList.remove('active'); });
+      li.classList.add('active');
+      var act = li.getAttribute('data-action');
+      close();
+      if (act === 'about') openAboutMeWindows();
+      else if (act === 'guide') openSurvivalGuideWindow();
+      else if (act === 'empty') openEmptySecretWindow();
+      else if (act === 'trash') openTrashWindow();
+    });
+  });
+}
+
+// 新增窗口：Empty Secret（占位内容）
+function openEmptySecretWindow(){
+  // 移动端：打开任一窗口时关闭其他窗口，确保不同时显示
+  if (window.innerWidth <= 768){
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){ w.remove(); });
+  }
+  var existing = Array.from(document.querySelectorAll('.macos-window'))
+    .find(function(w){ var t = w.querySelector('.window-title'); return t && t.textContent.trim() === 'Empty Secret'; });
+  if (existing){ bringToFront(existing); return; }
+  var html = '<div style="padding:12px;">\
+    <p style="margin:0; color:#333;">Nothing here yet. Keep exploring.</p>\
+  </div>';
+  var win = createWindow({ title: 'Empty Secret', contentHTML: html, width: 360, height: 240 });
+  // 移动端：宽度设置为设备宽度的 90%，并水平居中
+  if (window.innerWidth <= 768 && win){
+    var container = document.querySelector('.macos-theme') || document.body;
+    var mobileW = Math.round(container.clientWidth * 0.9);
+    win.style.width = mobileW + 'px';
+    win.style.minWidth = mobileW + 'px';
+    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
+    win.style.left = left + 'px';
+  }
+}
+
+// 新增窗口：Trash（占位内容）
+function openTrashWindow(){
+  // 移动端：打开任一窗口时关闭其他窗口，确保不同时显示
+  if (window.innerWidth <= 768){
+    Array.from(document.querySelectorAll('.macos-window')).forEach(function(w){ w.remove(); });
+  }
+  var existing = Array.from(document.querySelectorAll('.macos-window'))
+    .find(function(w){ var t = w.querySelector('.window-title'); return t && t.textContent.trim() === 'Trash'; });
+  if (existing){ bringToFront(existing); return; }
+  var html = '<div style="padding:12px;">\
+    <p style="margin:0; color:#333;">No items. Your Trash is empty.</p>\
+  </div>';
+  var win = createWindow({ title: 'Trash', contentHTML: html, width: 360, height: 240 });
+  // 移动端：宽度设置为设备宽度的 90%，并水平居中
+  if (window.innerWidth <= 768 && win){
+    var container = document.querySelector('.macos-theme') || document.body;
+    var mobileW = Math.round(container.clientWidth * 0.9);
+    win.style.width = mobileW + 'px';
+    win.style.minWidth = mobileW + 'px';
+    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
+    win.style.left = left + 'px';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   bindDockIcons();
   bindDesktopIcons();
@@ -1057,6 +1479,7 @@ document.addEventListener('DOMContentLoaded', function(){
   initStickyNoteDrag();
   initMenuClock();
   initTypewriterWelcome();
+  initMobileMenu();
 });
 
 })();
@@ -1132,6 +1555,109 @@ function openPhotoModal(url){
    fitImage();
    img.addEventListener('load', fitImage, { once: true });
    window.addEventListener('resize', fitImage);
+
+   // 触控放大与拖拽
+   wrap.style.touchAction = 'none';
+   img.style.userSelect = 'none';
+   img.style.willChange = 'transform';
+   var scale = 1, minScale = 1, maxScale = 3;
+   var startDist = 0, startScale = 1;
+   var tx = 0, ty = 0;
+   var isPanning = false, lastX = 0, lastY = 0;
+   var baseW = 0, baseH = 0;
+   function resetBase(){ var r = img.getBoundingClientRect(); baseW = r.width; baseH = r.height; }
+   function clampPan(){
+     var maxX = (baseW * (scale - 1)) / 2;
+     var maxY = (baseH * (scale - 1)) / 2;
+     if (!isFinite(maxX) || maxX < 0) maxX = 0;
+     if (!isFinite(maxY) || maxY < 0) maxY = 0;
+     tx = Math.max(-maxX, Math.min(tx, maxX));
+     ty = Math.max(-maxY, Math.min(ty, maxY));
+   }
+   function applyTransform(){ img.style.transform = 'translate(' + Math.round(tx) + 'px,' + Math.round(ty) + 'px) scale(' + scale + ')'; }
+   // 初始化基准尺寸
+   resetBase();
+
+   function dist2(a, b){ var dx = a.clientX - b.clientX; var dy = a.clientY - b.clientY; return Math.sqrt(dx*dx + dy*dy); }
+   function midpoint(a,b){ return { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 }; }
+
+   wrap.addEventListener('touchstart', function(e){
+     if (e.touches.length === 2){
+       e.preventDefault();
+       var a = e.touches[0], b = e.touches[1];
+       startDist = dist2(a,b);
+       startScale = scale;
+       var m = midpoint(a,b);
+       var rect = img.getBoundingClientRect();
+       var ox = ((m.x - rect.left) / rect.width) * 100;
+       var oy = ((m.y - rect.top) / rect.height) * 100;
+       img.style.transformOrigin = ox + '% ' + oy + '%';
+     } else if (e.touches.length === 1 && scale > 1){
+       isPanning = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+     }
+   }, { passive: false });
+
+   wrap.addEventListener('touchmove', function(e){
+     if (e.touches.length === 2){
+       e.preventDefault();
+       var a = e.touches[0], b = e.touches[1];
+       var d = dist2(a,b);
+       scale = Math.min(maxScale, Math.max(minScale, startScale * (d / (startDist || d))));
+       clampPan();
+       applyTransform();
+     } else if (e.touches.length === 1 && isPanning){
+       e.preventDefault();
+       var x = e.touches[0].clientX, y = e.touches[0].clientY;
+       tx += (x - lastX); ty += (y - lastY);
+       lastX = x; lastY = y;
+       clampPan();
+       applyTransform();
+     }
+   }, { passive: false });
+
+   wrap.addEventListener('touchend', function(e){
+     if (e.touches.length === 0){ isPanning = false; }
+   });
+   wrap.addEventListener('touchcancel', function(){ isPanning = false; });
+
+   // 双击（双指连击/快速两次单指轻触）切换缩放
+   var lastTap = 0;
+   wrap.addEventListener('touchend', function(e){
+     if (!e.changedTouches || e.changedTouches.length !== 1) return;
+     var now = Date.now();
+     if (now - lastTap < 250){
+       e.preventDefault();
+       if (scale > 1){
+         scale = 1; tx = 0; ty = 0; img.style.transformOrigin = '50% 50%';
+       } else {
+         var rect = img.getBoundingClientRect();
+         var t = e.changedTouches[0];
+         var ox = ((t.clientX - rect.left) / rect.width) * 100;
+         var oy = ((t.clientY - rect.top) / rect.height) * 100;
+         img.style.transformOrigin = ox + '% ' + oy + '%';
+         scale = 2;
+       }
+       clampPan();
+       applyTransform();
+       lastTap = 0;
+     } else {
+       lastTap = now;
+     }
+   }, { passive: false });
+
+   // 桌面滚轮缩放（便于开发预览）
+   wrap.addEventListener('wheel', function(e){
+     e.preventDefault();
+     var factor = (e.deltaY > 0) ? 0.92 : 1.08;
+     var newScale = Math.min(maxScale, Math.max(minScale, scale * factor));
+     var rect = img.getBoundingClientRect();
+     var ox = ((e.clientX - rect.left) / rect.width) * 100;
+     var oy = ((e.clientY - rect.top) / rect.height) * 100;
+     img.style.transformOrigin = ox + '% ' + oy + '%';
+     scale = newScale;
+     clampPan();
+     applyTransform();
+   }, { passive: false });
 
    function close(){
      overlay.style.opacity = '0';

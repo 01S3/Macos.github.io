@@ -257,3 +257,82 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .macos-theme .about-me-content .highlight { background: #007aff; color: #ffffff; border-radius: 4px; padding: 0 4px; }
 .macos-theme .about-me-content .accent { color: #007aff; font-weight: 600; }
 .macos-theme .about-me-content .warn { color: #ff3b30; font-weight: 600; text-decoration: line-through; text-decoration-thickness: 2px; }
+
+/* 移动端顶栏与汉堡菜单 */
+.macos-theme .menu-right .hamburger {
+  display: none;
+}
+.macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
+.macos-theme .menu-right .hamburger line { stroke: #333; stroke-width: 1.5; stroke-linecap: round; }
+
+.macos-theme .mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  z-index: 3000;
+}
+.macos-theme .mobile-menu.open { display: block; }
+.macos-theme .mobile-menu-inner {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 72%;
+  max-width: 320px;
+  background: rgba(245, 245, 245, 0.8);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid #d1d1d1;
+  border-radius: 16px 0 0 16px;
+  box-shadow: -6px 0 14px rgba(0,0,0,0.12);
+  display: flex; flex-direction: column;
+}
+.macos-theme .mobile-menu-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.macos-theme .mobile-title { font-weight: 600; color: #333; }
+.macos-theme .mobile-close {
+  width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; cursor: pointer; border: none; padding: 0; display: inline-block;
+  color: transparent; font-size: 0; line-height: 0;
+}
+.macos-theme .mobile-menu-list { list-style: none; margin: 0; padding: 12px; }
+.macos-theme .mobile-menu-list li {
+  padding: 10px 12px; font-size: 15px; border-radius: 8px; cursor: pointer;
+}
+.macos-theme .mobile-menu-list li:hover { background: #f5f5f5; }
+.macos-theme .mobile-menu-list li.active { color: #0a84ff; }
+
+/* 移动端适配：隐藏桌面图标，仅保留左侧 Apple 与右侧汉堡 */
+@media (max-width: 768px) {
+  .macos-theme .macos-window[data-mobile="drawer"] {
+    position: absolute;
+    transform: none !important;
+    border-radius: 12px;
+    min-height: 0 !important;
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] {
+    min-height: 32px !important; /* 与最小化一致 */
+    background-color: #f5f5f5; /* 与标题栏同色，避免下缘白边 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 折叠态阴影更轻，避免中间看起来更暗 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-header {
+    border-bottom: none; /* 折叠态去掉分隔线，防止出现下缘细线 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-content {
+    display: none;
+  }
+  /* 移动端：便签水平居中（不依赖固定宽度） */
+  .macos-theme .sticky-note { left: 50%; transform: translateX(-50%); }
+  .macos-theme .sticky-note:hover { transform: translateX(-50%) rotate(-2deg); }
+  .macos-theme .desktop-icons { display: none; }
+  .macos-theme .menu-items .menu-item:not(:first-child) { display: none; }
+  /* 隐藏日期与时间 */
+  .macos-theme #current-date, .macos-theme #current-time { display: none; }
+  .macos-theme .menu-right .hamburger {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 6px;
+    width: 28px; height: 22px; font-size: 14px; cursor: pointer;
+  }
+}
+/* 去重：hover 规则已在上方定义一次，避免重复定义影响维护 */
+.macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
+.macos-theme .menu-right .hamburger circle { stroke: #333; stroke-width: 2.2; stroke-linecap: round; fill: none; }
