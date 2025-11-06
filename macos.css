@@ -1,0 +1,641 @@
+/* macOS 主题基础与菜单样式（逐步迁移中） */
+:root { --macos-bg: #e5e5e7; }
+html, body { height: 100%; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Microsoft Yahei', sans-serif; background: var(--macos-bg); color: #222; margin: 0; }
+
+.macos-theme { height: 100vh; display: flex; flex-direction: column; background-color: #f5f5f5; background-image: linear-gradient(#e0e0e0 1px, transparent 1px), linear-gradient(90deg, #e0e0e0 1px, transparent 1px); background-size: 20px 20px; background-position: -1px -1px; }
+/* 恢复旧版 macos.html 的无衬线字体栈（作用域：macOS 主题） */
+.macos-theme, .macos-theme * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+/* 顶部菜单栏（作用域：.macos-theme） */
+.macos-theme .menu-bar {
+  height: 22px;
+  background-color: rgba(245, 245, 245, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #d1d1d1;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #333;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  /* 几何与缩放变量（以圆心为主） */
+      --pill-w: 60px;
+      --pill-h: 15px;
+      --pill-scale: 1;
+      --pill-center: 50%;
+      /* 圆环粗细参数 */
+      --ring-base: 2px;      /* 基础粗细 */
+      --ring-slim: 1;        /* 粗细系数（默认 1，扩展态稍微变细） */
+    }
+.macos-theme .menu-items { display: flex; gap: 15px; }
+.macos-theme .menu-item { padding: 0 5px; cursor: pointer; }
+.macos-theme .menu-item:hover { background-color: rgba(0,0,0,0.1); }
+.macos-theme .menu-right {
+  margin-left: auto; display: flex; align-items: center; gap: 10px;
+  color: #333 !important; z-index: 1001; position: relative;
+  font-size: 12px; font-weight: 500; text-shadow: 0 0 0 rgba(0,0,0,0);
+  background: transparent;
+}
+.macos-theme .menu-bar::after {
+     content: '';
+     position: fixed;
+     left: 50%;
+     /* 以圆心定位：元素顶边 = 圆心 - 半个缩放后的高度 */
+     top: calc(var(--pill-center) - ((var(--pill-h) * var(--pill-scale)) / 2));
+     transform: translate(-50%, 0) scale(var(--pill-scale));
+     width: var(--pill-w);
+     height: var(--pill-h);
+     background: #000; /* 纯黑 */
+     -webkit-backdrop-filter: none; /* 去除外侧灰晕 */
+     backdrop-filter: none; /* 去除外侧灰晕 */
+     border: none; /* 去除白色细边 */
+     border-radius: 9999px;
+     pointer-events: none;
+     box-sizing: border-box; /* 让可视尺寸包含描边，避免中心计算被边框影响 */
+     transform-origin: top center;
+     will-change: top, transform;
+      transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+   }
+  .macos-theme .menu-bar.photo-mode.expanded::after { background: transparent; box-shadow: none; }
+/* 扩展状态：向下并放大 */
+    .macos-theme .menu-bar.expanded {
+      /* 扩展态圆心位于顶栏底部之下 8px，加上半个放大后的高度 */
+      --pill-center: calc(100% + 8px + ((var(--pill-h) * var(--pill-scale)) / 2));
+      --pill-scale: 5.4;
+      /* 扩展态圆环进一步变细 */
+      --ring-slim: 0.4;
+    }
+.macos-theme .menu-items { display: flex; gap: 15px; }
+.macos-theme .menu-item { padding: 0 5px; cursor: pointer; }
+.macos-theme .menu-item:hover { background-color: rgba(0,0,0,0.1); }
+.macos-theme .menu-right {
+  margin-left: auto; display: flex; align-items: center; gap: 10px;
+  color: #333 !important; z-index: 1001; position: relative;
+  font-size: 12px; font-weight: 500; text-shadow: 0 0 0 rgba(0,0,0,0);
+  background: transparent;
+}
+
+/* 主要内容区域 */
+.macos-theme .main-content { flex: 1; display: flex; align-items: center; justify-content: center; padding-top: 22px; position: relative; }
+.macos-theme .welcome-text { font-size: 16px; color: #333; }
+/* 打字机光标样式 */
+.macos-theme .welcome-text .typing-cursor { display: inline-block; margin-left: 4px; font-weight: 400; opacity: 1; }
+
+/* 桌面图标 */
+.macos-theme .desktop-icons {
+  position: absolute;
+  top: 50px;
+  right: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  align-items: center;
+  z-index: 900; /* 保持在窗口之下 */
+}
+.macos-theme .icon { display: flex; flex-direction: column; align-items: center; width: 80px; cursor: pointer; transition: transform 0.2s ease; }
+.macos-theme .icon:hover { transform: scale(1.05); }
+.macos-theme .icon img { width: 50px; height: 50px; margin-bottom: 5px; }
+.macos-theme .icon-label { font-size: 12px; font-weight: 500; color: #333; text-align: center; background-color: rgba(245,245,245,0.9); padding: 2px 5px; border-radius: 3px; white-space: nowrap; }
+
+/* 便签样式 */
+.macos-theme .sticky-note {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 280px;
+  height: 280px;
+  transition: background 1s ease;
+  color: #fff;
+  padding: 15px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  transform: rotate(0deg);
+  font-family: 'Inter', 'Arial', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1.5;
+  transition: transform 0.3s ease;
+  z-index: 10;
+  cursor: move;
+}
+.macos-theme .sticky-note:hover { transform: rotate(-2deg); }
+
+/* macOS 窗口样式 */
+.macos-theme .macos-window {
+  position: absolute;
+  width: 400px;
+  min-height: 230px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+ z-index: 4000; /* 提升窗口层级确保灵动岛置顶 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.macos-theme .window-header {
+  height: 32px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #d1d1d1;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: move;
+  user-select: none;
+}
+.macos-theme .window-controls { display: flex; gap: 8px; margin-right: 10px; }
+.macos-theme .window-control { width: 12px; height: 12px; border-radius: 50%; background-color: #ccc; cursor: pointer; }
+.macos-theme .window-control.close { background-color: #ff5f56; }
+.macos-theme .window-control.minimize { background-color: #ffbd2e; }
+.macos-theme .window-control.maximize { background-color: #27c93f; }
+.macos-theme .window-title { flex: 1; text-align: center; font-size: 13px; color: #333; }
+.macos-theme .window-content {
+  flex: 1; padding: 12px 20px 20px; font-size: 14px; line-height: 1.5; overflow-y: auto;
+  -ms-overflow-style: none; scrollbar-width: none;
+}
+.macos-theme .window-content::-webkit-scrollbar { display: none; }
+.macos-theme .scrollable, .macos-theme .photo-nav-item, .macos-theme .macos-window { -ms-overflow-style: none; scrollbar-width: none; }
+.macos-theme .scrollable::-webkit-scrollbar, .macos-theme .photo-nav-item::-webkit-scrollbar, .macos-theme .macos-window::-webkit-scrollbar { display: none; }
+.macos-theme .macos-window::-webkit-resizer { display: none; }
+
+/* 底部Dock栏（主题作用域） */
+.macos-theme .dock {
+  height: auto;
+  background-color: rgba(245, 245, 245, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid #d1d1d1;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding: 5px; /* 与旧版保持一致 */
+  gap: 5px; /* 与旧版保持一致 */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 2001; /* 提升Dock层级，确保可点击 */
+  transition: all 0.3s ease;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  justify-content: center;
+  min-width: 300px;
+}
+
+.macos-theme .dock-icon {
+  width: auto; /* 取消固定尺寸，按图片尺寸呈现 */
+  height: auto; /* 取消固定尺寸，按图片尺寸呈现 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* 旧版未对每个图标额外留白 */
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.macos-theme .dock-icon img {
+  width: 55px; /* 与旧版一致 */
+  height: 55px; /* 与旧版一致 */
+  object-fit: contain;
+  transition: all 0.3s ease; /* 与旧版一致 */
+  display: block;
+}
+
+/* 取消背景高亮，以匹配旧版交互 */
+.macos-theme .dock-icon:hover { background-color: transparent; }
+
+/* 响应式与旧版一致 */
+@media (max-width: 1024px) {
+  .macos-theme .dock-icon img { width: 45px; height: 45px; }
+}
+@media (max-width: 480px) {
+  .macos-theme .dock-icon img { width: 35px; height: 35px; }
+}
+
+/* mac 风格悬停提示（帮助标签样式） */
+.macos-tooltip {
+   position: fixed;
+   background: #111;
+   color: #fff;
+   border: 1px solid #333;
+   border-radius: 6px;
+   box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+   padding: 6px 8px;
+   font-size: 12px;
+   line-height: 1.4;
+   max-width: 280px;
+   z-index: 3000;
+ }
+.macos-tooltip::before,
+ .macos-tooltip::after {
+   content: '';
+   position: absolute;
+   width: 0; height: 0;
+   pointer-events: none;
+ }
+ .macos-tooltip[data-position="above"]::before {
+   top: 100%;
+   left: var(--arrow-left, 12px);
+   transform: translateX(-50%);
+   border-width: 7px;
+   border-style: solid;
+   border-color: #333 transparent transparent transparent;
+ }
+ .macos-tooltip[data-position="above"]::after {
+   top: 100%;
+   left: var(--arrow-left, 12px);
+   transform: translateX(-50%);
+   border-width: 6px;
+   border-style: solid;
+   border-color: #111 transparent transparent transparent;
+ }
+ .macos-tooltip[data-position="below"]::before {
+   bottom: 100%;
+   left: var(--arrow-left, 12px);
+   transform: translateX(-50%);
+   border-width: 7px;
+   border-style: solid;
+   border-color: transparent transparent #333 transparent;
+ }
+ .macos-tooltip[data-position="below"]::after {
+   bottom: 100%;
+   left: var(--arrow-left, 12px);
+   transform: translateX(-50%);
+   border-width: 6px;
+   border-style: solid;
+   border-color: transparent transparent #111 transparent;
+ }
+.macos-theme .mac-badge {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.macos-theme .mac-badge-new {
+  background: #0A84FF;
+  color: #fff;
+  border: 1px solid #006AE6;
+  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.25);
+}
+.macos-theme .mac-badge-top {
+  background: #5E5CE6;
+  color: #fff;
+  border: 1px solid #4B4AC2;
+  box-shadow: 0 2px 6px rgba(94, 92, 230, 0.25);
+}
+.macos-theme .mac-badge-hot {
+  background: #FF3B30;
+  color: #fff;
+  border: 1px solid #D62A22;
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25);
+}
+.macos-theme .about-me-content { font-size: 15px; line-height: 1.7; color: #333; }
+.macos-theme .about-me-title { font-weight: 600; color: #007aff; margin-bottom: 8px; }
+.macos-theme .about-me-list { margin: 0; padding-left: 18px; list-style: disc; }
+.macos-theme .about-me-list li { margin: 6px 0; }
+.macos-theme .about-me-content .highlight { background: #007aff; color: #ffffff; border-radius: 4px; padding: 0 4px; }
+.macos-theme .about-me-content .accent { color: #007aff; font-weight: 600; }
+.macos-theme .about-me-content .warn { color: #ff3b30; font-weight: 600; text-decoration: line-through; text-decoration-thickness: 2px; }
+
+/* 移动端顶栏与汉堡菜单 */
+.macos-theme .menu-right .hamburger {
+  display: none;
+}
+.macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
+.macos-theme .menu-right .hamburger line { stroke: #333; stroke-width: 1.5; stroke-linecap: round; }
+
+.macos-theme .mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  z-index: 3000;
+}
+.macos-theme .mobile-menu.open { display: block; }
+.macos-theme .mobile-menu-inner {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 72%;
+  max-width: 320px;
+  background: rgba(245, 245, 245, 0.8);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid #d1d1d1;
+  border-radius: 16px 0 0 16px;
+  box-shadow: -6px 0 14px rgba(0,0,0,0.12);
+  display: flex; flex-direction: column;
+}
+.macos-theme .mobile-menu-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.macos-theme .mobile-title { font-weight: 600; color: #333; }
+.macos-theme .mobile-close {
+  width: 12px; height: 12px; border-radius: 50%; background-color: #ff5f56; cursor: pointer; border: none; padding: 0; display: inline-block;
+  color: transparent; font-size: 0; line-height: 0;
+}
+.macos-theme .mobile-menu-list { list-style: none; margin: 0; padding: 12px; }
+.macos-theme .mobile-menu-list li {
+  padding: 10px 12px; font-size: 15px; border-radius: 8px; cursor: pointer;
+}
+.macos-theme .mobile-menu-list li:hover { background: #f5f5f5; }
+.macos-theme .mobile-menu-list li.active { color: #0a84ff; }
+
+/* 移动端适配：隐藏桌面图标，仅保留左侧 Apple 与右侧汉堡 */
+@media (max-width: 768px) {
+  .macos-theme .macos-window[data-mobile="drawer"] {
+    position: absolute;
+    transform: none !important;
+    border-radius: 12px;
+    min-height: 0 !important;
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] {
+    min-height: 32px !important; /* 与最小化一致 */
+    background-color: #f5f5f5; /* 与标题栏同色，避免下缘白边 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 折叠态阴影更轻，避免中间看起来更暗 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-header {
+    border-bottom: none; /* 折叠态去掉分隔线，防止出现下缘细线 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-content {
+    display: none;
+  }
+  /* 移动端：便签水平居中（不依赖固定宽度） */
+  .macos-theme .sticky-note { left: 50%; transform: translateX(-50%); }
+  .macos-theme .sticky-note:hover { transform: translateX(-50%) rotate(-2deg); }
+  .macos-theme .desktop-icons { display: none; }
+  .macos-theme .menu-items .menu-item:not(:first-child) { display: none; }
+  /* 隐藏日期与时间 */
+  .macos-theme #current-date, .macos-theme #current-time { display: none; }
+  .macos-theme .menu-right .hamburger {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 6px;
+    width: 28px; height: 22px; font-size: 14px; cursor: pointer;
+  }
+}
+/* 去重：hover 规则已在上方定义一次，避免重复定义影响维护 */
+.macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
+.macos-theme .menu-right .hamburger circle { stroke: #333; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+@keyframes diExpand {
+  0% { top: 50%; transform: translate(-50%, -50%) scale(var(--pill-scale)); }
+  45% { top: calc(100% + 8px); transform: translate(-50%, 0) scale(var(--pill-scale)); }
+  100% { top: 50%; transform: translate(-50%, -50%) scale(var(--pill-scale)); }
+}
+.macos-theme .menu-bar.pill-animate::after {
+   transform-origin: top center;
+   animation: diExpand 2s ease-in-out;
+ }
+/* 同步缩放变量时间线（与 diExpand 时间线一致） */
+.macos-theme .menu-bar.pill-animate { animation: diScale 2s ease-in-out; }
+@keyframes diScale {
+  0% { --pill-scale: 1; }
+  45% { --pill-scale: 6; }
+  100% { --pill-scale: 1; }
+}
+/* 声明可动画的缩放变量 */
+@property --pill-scale {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+ 
+ /* 声明可动画的角度属性用于计时环进度 */
+ @property --progress {
+   syntax: '<angle>';
+   inherits: false;
+   initial-value: 0deg;
+ }
+ 
+ /* 顶栏药丸右侧计时环（演示） */
+ .macos-theme .pill-timer {
+        position: fixed;
+        /* 与药丸右侧半圆同心：偏移 = (宽/2 - 高/2) × 缩放 */
+        left: calc(50% + ((var(--pill-w) - var(--pill-h)) / 2) * var(--pill-scale));
+        /* 圆环圆心直接绑定到药丸圆心变量，避免百分比位移与缩放的相互影响 */
+          top: var(--pill-center);
+          transform: translate(-50%, -50%);
+          /* 圆环直径随缩放变化，保持始终小于药丸高度 */
+          width: calc(12px * var(--pill-scale));
+     height: calc(12px * var(--pill-scale));
+          border-radius: 50%;
+          z-index: 5000; /* 确保高于主窗口层级 */
+          pointer-events: none;
+         will-change: top, left, width, height, transform;
+          transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                     left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                     width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                     height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                     transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+  /* 扩大态：允许药丸与圆环响应悬停（用于暂停计时）*/
+  .macos-theme .menu-bar.expanded .pill-content,
+  .macos-theme .menu-bar.expanded .pill-timer { pointer-events: auto; }
+  .macos-theme .pill-timer::before {
+    content: '';
+    position: absolute; inset: 0; /* 动态粗细：随 scale 等比例放大，并可在扩展态稍微变细 */
+    border-radius: 50%;
+    background: conic-gradient(#2ecc71 var(--progress), transparent 0);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - calc(var(--ring-base) * var(--pill-scale) * var(--ring-slim))), #000 0);
+    mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-base) * var(--pill-scale) * var(--ring-slim))), #000 0);
+    animation: pillTimer 6s linear infinite;
+    shape-rendering: geometricPrecision; /* 添加抗锯齿优化 */
+  }
+  /* 悬停暂停计时与圆环动画 */
+  .macos-theme .menu-bar.paused .pill-timer::before { animation-play-state: paused; }
+  .macos-theme .menu-bar.paused .pill-timer { animation-play-state: paused !important; }
+  /* 离开时重置圆环动画到起点（移除后恢复将从 0 开始） */
+  .macos-theme .pill-timer.reset::before { animation: none !important; }
+
+  /* 左侧圆形照片（与右侧计时环对称） */
+  .macos-theme .pill-photo {
+    position: absolute;
+    left: calc(50% - ((var(--pill-w) - var(--pill-h)) / 2) * var(--pill-scale));
+    top: var(--pill-center);
+    transform: translate(-50%, -50%);
+    width: calc(12px * var(--pill-scale));
+    height: calc(12px * var(--pill-scale));
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 1001;
+    display: block; /* 始终在 DOM 中，避免显示延迟 */
+    opacity: 0;
+    border: none !important; /* 强制移除边框 */
+    outline: none !important; /* 强制移除轮廓 */
+    box-shadow: none !important; /* 移除阴影效果 */
+    will-change: top, left, width, height, opacity;
+    transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .macos-theme .menu-bar.pill-animate .pill-photo { animation: diFollow 2s ease-in-out; }
+  .macos-theme .menu-bar.photo-mode.expanded .pill-photo { opacity: 1; }
+  .macos-theme .pill-photo img { width: 100%; height: 100%; object-fit: cover; display: block; border: none !important; outline: none !important; }
+
+  /* 照片模式底部磨砂背景 */
+  .macos-theme .pill-bg {
+    position: absolute;
+    left: 50%;
+    top: var(--pill-center);
+    transform: translate(-50%, -50%);
+    width: calc(var(--pill-w) * var(--pill-scale));
+    height: calc(var(--pill-h) * var(--pill-scale));
+    border-radius: calc(var(--pill-h) / 2 * var(--pill-scale));
+    overflow: hidden;
+    z-index: 900;
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    will-change: top, left, width, height, transform, opacity;
+    transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+               transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.2s ease,
+                border-radius 0.3s ease;
+}
+.macos-theme .menu-bar:not(.expanded) .pill-bg { border-radius: 9999px; }
+  .macos-theme .menu-bar.photo-mode.expanded .pill-bg { opacity: 1; pointer-events: auto; cursor: pointer; }
+  .macos-theme .menu-bar.pill-animate .pill-bg { animation: diFollow 2s ease-in-out; }
+  .macos-theme .pill-bg .fill { position: absolute; left: -10px; right: -10px; bottom: -10px; top: -10px; background-size: cover; background-position: center; filter: blur(2px) saturate(1.00); }
+  .macos-theme .pill-bg .frost { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.50); pointer-events: none; }
+
+  /* 药丸内容容器：跟随圆心定位，覆盖在药丸之上 */
+  .macos-theme .pill-content {
+    position: absolute;
+    left: 50%;
+    top: var(--pill-center);
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; /* 默认左侧更宽，避免贴边 */
+    /* 为右侧计时环的左缘精确预留空间：半个药丸高度 + 半个圆环直径 + 安全间距（CSS 仅作回退；JS 将实时约束）*/
+    --safe-gap: 0px; /* 文本到圆环的最小间距（可调） */
+    padding-right: calc(((var(--pill-h) / 2) + 5px) * var(--pill-scale) + 6px);
+    height: calc(var(--pill-h) * var(--pill-scale));
+    width: calc(var(--pill-w) * var(--pill-scale));
+    box-sizing: border-box;
+    color: #fff; /* 黑色药丸上的文字为白色 */
+    z-index: 1000; /* 保持在圆环之下，避免覆盖 */
+    pointer-events: none; /* 不干扰交互 */
+    white-space: nowrap; overflow: hidden;
+    will-change: top, transform;
+    transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease;
+  }
+  /* 收缩态：仅显示标题 */
+  .macos-theme .menu-bar:not(.expanded) .pill-content .pill-logo,
+  .macos-theme .menu-bar:not(.expanded) .pill-content .pill-meta { display: none; }
+  /* 收缩态：标题居中显示（左右边距一致） */
+     .macos-theme .menu-bar:not(.expanded) .pill-content { justify-content: center; --collapsed-margin: 6px; padding-left: var(--collapsed-margin); --safe-gap: var(--collapsed-margin); padding-right: max(0px, calc(((var(--pill-h) / 2) + 5px) * var(--pill-scale) + var(--safe-gap))); pointer-events: auto; cursor: pointer; }
+      .macos-theme .menu-bar:not(.expanded) .pill-timer { cursor: pointer; }
+      .macos-theme .menu-bar.expanded .pill-title { cursor: pointer; }
+     .macos-theme .menu-bar:not(.expanded) .pill-text { display: flex; align-items: center; justify-content: center; margin-top: 0; height: var(--pill-h); gap: 0; max-width: calc(100% - max(0px, calc(((var(--pill-h) / 2) + 5px) * var(--pill-scale) + var(--safe-gap)))); }
+        .macos-theme .menu-bar:not(.expanded) .pill-title { text-align: center; font-size: 9.5px; line-height: 1; font-weight: 400; letter-spacing: 0.1px; display: inline-block; }
+  
+  /* 执行扩展态：显示完整信息，左对齐更易读（减少左右内边距并加大贴环程度；右侧采用保护写法） */
+     .macos-theme .menu-bar.expanded .pill-content { justify-content: flex-start; padding-left: 24px; --safe-gap: -65px; padding-right: max(0px, calc(((var(--pill-h) / 2) + 5px) * var(--pill-scale) + var(--safe-gap))); }
+     .macos-theme .pill-logo { width: 16px; height: 16px; border-radius: 3px; background: #2ecc71; flex-shrink: 0; }
+      .macos-theme .pill-text { flex: 1; min-width: 0; /* 让文本区域可缩，避免挤进圆环 */
+        max-width: calc(100% - ((((var(--pill-h) / 2) + 5px) * var(--pill-scale)) + 6px)); /* 扣除右侧从圆环左缘到容器右缘的可视保留区 */
+        overflow: hidden; /* 文本区域自身防溢出 */
+        display: flex; flex-direction: column; gap: 8px; /* 增加标题与日期间距 */
+      }
+      /* 仅放大态上移标题，避免影响缩小态垂直居中（右侧使用保护写法与内边距一致） */
+      .macos-theme .menu-bar.expanded .pill-text { margin-top: -2px; max-width: calc(100% - max(0px, calc(((var(--pill-h) / 2) + 5px) * var(--pill-scale) + var(--safe-gap)))); }
+   .macos-theme .pill-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+   .macos-theme .pill-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+   .macos-theme .pill-meta { font-size: 12px; opacity: 0.85; display: inline-flex; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* pill 标题走马灯动画（隐藏原始文本，仅滚动副本，避免堆叠） */
+.macos-theme .pill-content .pill-title.marquee {
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  position: relative;
+  color: transparent; /* 隐藏原始文本，避免与滚动副本堆叠 */
+  display: block;
+  width: 100%;
+}
+.macos-theme .pill-content .pill-title.marquee::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0; top: 0;
+  display: inline-block;
+  padding-left: var(--marquee-padding-left, 0px);
+  color: #fff; /* 显示滚动副本 */
+  animation: pill-title-marquee 10s linear infinite;
+}
+@keyframes pill-title-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* pill 徽标容器：与 mac-badge 复用样式 */
+.macos-theme .pill-content .pill-badges {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0; /* 徽标不挤压但整体仍在安全区内 */
+}
+
+ @keyframes pillTimer {
+    from { --progress: 0deg; }
+    to { --progress: 360deg; }
+  }
+  /* 计时环随药丸一起移动（同位移曲线） */
+  @keyframes diFollow {
+    0% { top: calc(50% + ((var(--pill-h) * (var(--pill-scale) - 1)) / 2)); transform: translate(-50%, -50%); }
+    45% { top: calc(100% + 8px + ((var(--pill-h) * (var(--pill-scale) - 1)) / 2)); transform: translate(-50%, -50%); }
+    100% { top: calc(50% + ((var(--pill-h) * (var(--pill-scale) - 1)) / 2)); transform: translate(-50%, -50%); }
+  }
+  .macos-theme .menu-bar.pill-animate .pill-timer {
+    animation: diFollow 2s ease-in-out;
+  }
+.macos-theme .mobile-menu-list li.active { color: #0a84ff; }
+
+/* 移动端适配：隐藏桌面图标，仅保留左侧 Apple 与右侧汉堡 */
+@media (max-width: 768px) {
+  .macos-theme .macos-window[data-mobile="drawer"] {
+    position: absolute;
+    transform: none !important;
+    border-radius: 12px;
+    min-height: 0 !important;
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] {
+    min-height: 32px !important; /* 与最小化一致 */
+    background-color: #f5f5f5; /* 与标题栏同色，避免下缘白边 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 折叠态阴影更轻，避免中间看起来更暗 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-header {
+    border-bottom: none; /* 折叠态去掉分隔线，防止出现下缘细线 */
+  }
+  .macos-theme .macos-window[data-mobile="drawer"][data-collapsed="true"] .window-content {
+    display: none;
+  }
+  /* 移动端：便签水平居中（不依赖固定宽度） */
+  .macos-theme .sticky-note { left: 50%; transform: translateX(-50%); }
+  .macos-theme .sticky-note:hover { transform: translateX(-50%) rotate(-2deg); }
+  .macos-theme .desktop-icons { display: none; }
+  .macos-theme .menu-items .menu-item:not(:first-child) { display: none; }
+  /* 隐藏日期与时间 */
+  .macos-theme #current-date, .macos-theme #current-time { display: none; }
+  .macos-theme .menu-right .hamburger {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 6px;
+    width: 28px; height: 22px; font-size: 14px; cursor: pointer;
+  }
+}
+/* 去重：hover 规则已在上方定义一次，避免重复定义影响维护 */
+.macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
+.macos-theme .menu-right .hamburger circle { stroke: #333; stroke-width: 2.2; stroke-linecap: round; fill: none; }

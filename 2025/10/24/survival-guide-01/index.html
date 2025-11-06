@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OMNI-DIRECTIONAL STUDIO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+  
+<link rel="stylesheet" href="/macos.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+<body style="margin:0;background:#e5e5e7;">
+  <article class="post" style="max-width:860px; margin:40px auto; padding:0 20px; line-height:1.8; color:#222;">
+  <h1 style="font-size:24px; margin:0 0 10px 0; font-weight:600; word-break:break-word; overflow-wrap:anywhere;"> MACOS主题：管理数据驱动的相册（新手友好） </h1>
+  <div style="color:#666; font-size:12px; margin-bottom:20px;"> 2025/10/24 </div>
+
+  <style>
+    .post-content { font-size: 15px; line-height: 1.8; padding-bottom: 24px; }
+    .post-content h1, .post-content h2, .post-content h3, .post-content h4 { word-break: break-word; overflow-wrap: anywhere; }
+    .post-content img { max-width: 100%; height: auto; }
+
+    /* 行内代码保持浅色背景，阅读不打断正文 */
+    .post-content code { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; background: #f2f3f5; padding: 2px 4px; border-radius: 4px; }
+
+    /* 代码块：编辑器（Trae风格）深色配色 */
+    .post-content .highlight { overflow: hidden; background: transparent; }
+    .post-content .highlight table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+    .post-content .highlight td { vertical-align: top; }
+
+    /* 左列行号与右列代码统一顶部对齐与内边距，圆角矩形拼接 */
+    .post-content .highlight td.gutter { width: 2.8em; padding: 12px 10px; text-align: right; color: #7f7f7f; user-select: none; background: #1a1a1a; border: 1px solid #2a2a2a; border-right: 0; border-radius: 6px 0 0 6px; }
+    .post-content .highlight td.code { width: auto; padding: 12px; background: #1e1e1e; color: #d4d4d4; border: 1px solid #2a2a2a; border-left: 0; border-radius: 0 6px 6px 0; }
+
+    /* 单元格内的 pre 归零并统一字号/行高/字体 */
+    .post-content .highlight td.gutter pre,
+    .post-content .highlight td.code pre { margin: 0; padding: 0; background: transparent; border-radius: 0; font-size: 14px; line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* 行号不换行，代码可自动换行 */
+    .post-content .highlight td.gutter pre { white-space: pre; }
+    .post-content .highlight td.code pre { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+
+    /* Trae风格的语法高亮（同时兼容 highlight.js 与 Hexo 内置类名） */
+    .post-content .highlight .comment, .post-content .highlight .hljs-comment { color: #6a9955; }
+    .post-content .highlight .keyword, .post-content .highlight .hljs-keyword { color: #c586c0; }
+    .post-content .highlight .string, .post-content .highlight .hljs-string { color: #ce9178; }
+    .post-content .highlight .number, .post-content .highlight .hljs-number, .post-content .highlight .literal, .post-content .highlight .hljs-literal { color: #b5cea8; }
+    .post-content .highlight .title, .post-content .highlight .hljs-title, .post-content .highlight .function .title, .post-content .highlight .hljs-function .hljs-title { color: #dcdcaa; }
+    .post-content .highlight .attr, .post-content .highlight .hljs-attr, .post-content .highlight .params, .post-content .highlight .hljs-params, .post-content .highlight .variable, .post-content .highlight .hljs-variable { color: #9cdcfe; }
+    .post-content .highlight .built_in, .post-content .highlight .hljs-built_in { color: #4ec9b0; }
+    .post-content .highlight .meta, .post-content .highlight .hljs-meta { color: #c586c0; }
+    .post-content .highlight .operator, .post-content .highlight .hljs-operator, .post-content .highlight .punctuation, .post-content .highlight .hljs-punctuation { color: #d4d4d4; }
+
+    /* 在窄窗口隐藏行号栏时，让代码块变为完整圆角矩形 */
+    @media (max-width: 800px) {
+      .post-content .highlight td.gutter { display: none; }
+      .post-content .highlight td.code { width: 100%; border-left: 1px solid #2a2a2a; border-radius: 6px; }
+    }
+  </style>
+
+  <div class="post-content">
+    <p>这是一篇示例文章，演示如何用 Hexo 的 <code>source/_data/photos.json</code> 驱动主题中的相册分类，并在前端渲染对应内容。你可以把它当作格式范本，按需复制修改。</p>
+<h2 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h2><p><code>source/_data/photos.json</code> 使用“对象”格式，键名与侧栏分类一致：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;photos&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/landscape-1.jpg&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;people&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/people-1.jpg&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;projects&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/project-1.jpg&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aigc&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/aigc-1.jpg&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;favorites&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/people-1.jpg&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;recent&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;/images/project-1.jpg&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>photos</code>、<code>people</code>、<code>projects</code>、<code>aigc</code>、<code>favorites</code>、<code>recent</code> 分别对应侧栏分类。</li>
+<li><code>All Photos</code> 会自动聚合各分类并去重（无需额外 <code>all</code> 字段）。</li>
+</ul>
+<h2 id="前端渲染要点"><a href="#前端渲染要点" class="headerlink" title="前端渲染要点"></a>前端渲染要点</h2><p>下面是主题中负责分类选择与渲染的两个核心函数（摘录，含中文备注）：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 兼容旧标识：memories -&gt; people，places -&gt; aigc</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">getSectionList</span>(<span class="params">section</span>)&#123;</span><br><span class="line">  <span class="keyword">if</span> (section === <span class="string">&#x27;memories&#x27;</span>) section = <span class="string">&#x27;people&#x27;</span>;</span><br><span class="line">  <span class="keyword">if</span> (section === <span class="string">&#x27;places&#x27;</span>) section = <span class="string">&#x27;aigc&#x27;</span>;</span><br><span class="line">  <span class="keyword">var</span> data = <span class="variable language_">window</span>.<span class="property">__MACOS_PHOTOS__</span> || [];</span><br><span class="line">  <span class="comment">// 如果是旧格式（数组），返回所有图片</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(data)) <span class="keyword">return</span> data;</span><br><span class="line">  <span class="comment">// 新格式：按分类对象</span></span><br><span class="line">  <span class="keyword">var</span> map = data || &#123;&#125;;</span><br><span class="line">  <span class="keyword">if</span> (section === <span class="string">&#x27;all-photos&#x27;</span>)&#123;</span><br><span class="line">    <span class="comment">// 聚合并去重</span></span><br><span class="line">    <span class="keyword">var</span> keys = [<span class="string">&#x27;photos&#x27;</span>,<span class="string">&#x27;people&#x27;</span>,<span class="string">&#x27;projects&#x27;</span>,<span class="string">&#x27;aigc&#x27;</span>,<span class="string">&#x27;favorites&#x27;</span>,<span class="string">&#x27;recent&#x27;</span>,<span class="string">&#x27;all&#x27;</span>];</span><br><span class="line">    <span class="keyword">var</span> seen = <span class="keyword">new</span> <span class="title class_">Set</span>(); <span class="keyword">var</span> out = [];</span><br><span class="line">    keys.<span class="title function_">forEach</span>(<span class="keyword">function</span>(<span class="params">k</span>)&#123;</span><br><span class="line">      <span class="keyword">var</span> arr = map[k];</span><br><span class="line">      <span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(arr))&#123;</span><br><span class="line">        arr.<span class="title function_">forEach</span>(<span class="keyword">function</span>(<span class="params">u</span>)&#123; <span class="keyword">if</span> (!seen.<span class="title function_">has</span>(u)) &#123; seen.<span class="title function_">add</span>(u); out.<span class="title function_">push</span>(u); &#125; &#125;);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">return</span> out;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="title class_">Array</span>.<span class="title function_">isArray</span>(map[section]) ? map[section] : [];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">updatePhotoContent</span>(<span class="params">section</span>)&#123;</span><br><span class="line">  <span class="keyword">var</span> titles = &#123;</span><br><span class="line">    <span class="string">&#x27;photos&#x27;</span>: <span class="string">&#x27;Landscapes&#x27;</span>,<span class="string">&#x27;people&#x27;</span>: <span class="string">&#x27;People&#x27;</span>,<span class="string">&#x27;projects&#x27;</span>: <span class="string">&#x27;Projects&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;aigc&#x27;</span>: <span class="string">&#x27;AIGC&#x27;</span>,<span class="string">&#x27;favorites&#x27;</span>: <span class="string">&#x27;Favorites&#x27;</span>,<span class="string">&#x27;recent&#x27;</span>: <span class="string">&#x27;Recently Added&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;memories&#x27;</span>: <span class="string">&#x27;People&#x27;</span>,<span class="string">&#x27;places&#x27;</span>: <span class="string">&#x27;AIGC&#x27;</span> <span class="comment">// 兼容旧标识</span></span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="keyword">var</span> toolbarTitleEl = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;.photo-toolbar-title&#x27;</span>);</span><br><span class="line">  <span class="keyword">var</span> photoGrid = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;.photo-grid &gt; div&#x27;</span>);</span><br><span class="line">  <span class="keyword">if</span> (toolbarTitleEl) toolbarTitleEl.<span class="property">textContent</span> = titles[section] || <span class="string">&#x27;All Photos&#x27;</span>;</span><br><span class="line">  <span class="keyword">if</span> (photoGrid) photoGrid.<span class="property">innerHTML</span> = <span class="title function_">buildGridHTML</span>(<span class="title function_">getSectionList</span>(section));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="NSFW-与单项维护：使用方法"><a href="#NSFW-与单项维护：使用方法" class="headerlink" title="NSFW 与单项维护：使用方法"></a>NSFW 与单项维护：使用方法</h2><p>为了在相册中对某些图片启用 NSFW 蒙版，本主题支持两种维护方式：</p>
+<ul>
+<li>单项维护（推荐）：在 <code>source/_data/photos.json</code> 中，将该图片条目改为对象格式，并加上 <code>nsfw: true</code>。</li>
+<li>批量维护（可选）：在页面模板中注入全局列表 <code>window.__MACOS_NSFW__</code>，直接列出需要 NSFW 的图片 URL。</li>
+</ul>
+<h3 id="单项维护示例（支持字符串-对象混合）"><a href="#单项维护示例（支持字符串-对象混合）" class="headerlink" title="单项维护示例（支持字符串&#x2F;对象混合）"></a>单项维护示例（支持字符串&#x2F;对象混合）</h3><p>把原本的字符串条目改为对象即可：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;aigc&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://imgtolinkx.com/i/t1mKWjz0&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;nsfw&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://imgtolinkx.com/i/whJHkhLt&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;nsfw&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>允许同时存在字符串与对象条目；标记为 NSFW 的对象需包含 <code>url</code> 字段。</li>
+<li>相册内展示时，标记为 NSFW 的图片将显示模糊与「NSFW」蒙版。</li>
+</ul>
+<h3 id="批量维护示例（页面模板注入）"><a href="#批量维护示例（页面模板注入）" class="headerlink" title="批量维护示例（页面模板注入）"></a>批量维护示例（页面模板注入）</h3><p>如果希望按 URL 批量标记，可在 <code>themes/macos/layout/macos.ejs</code> 的脚本中注入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;script&gt;</span><br><span class="line">  window.__MACOS_NSFW__ = [</span><br><span class="line">    &#x27;https://imgtolinkx.com/i/t1mKWjz0&#x27;,</span><br><span class="line">    &#x27;https://imgtolinkx.com/i/whJHkhLt&#x27;</span><br><span class="line">  ];</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>该列表为纯字符串数组（图片直链），与单项维护兼容；两者任一命中即判定为 NSFW。</li>
+</ul>
+<h3 id="交互与展示说明"><a href="#交互与展示说明" class="headerlink" title="交互与展示说明"></a>交互与展示说明</h3><ul>
+<li>首次点击：移除蒙版与模糊，但不打开大图；再次点击：打开透明模态查看大图。</li>
+<li>蒙版圆角：蒙版继承照片卡片的圆角（<code>border-radius: inherit</code>），与底框一致。</li>
+<li>去重策略：<code>All Photos</code> 按 URL 去重；请保持同一图片在各分类中的 URL 完全一致，避免重复。</li>
+</ul>
+<h3 id="维护建议"><a href="#维护建议" class="headerlink" title="维护建议"></a>维护建议</h3><ul>
+<li>对需要 NSFW 的条目优先使用对象格式 <code>{ url, nsfw: true }</code>，便于就地维护。</li>
+<li>如需批量标记，使用全局 <code>window.__MACOS_NSFW__</code>；适合一次性批量维护或外部导入场景。</li>
+<li>如未来希望某分类（如 <code>aigc</code>）默认全部 NSFW，可加分类级开关；我可以按你的需求继续完善。</li>
+</ul>
+<h2 id="发布建议"><a href="#发布建议" class="headerlink" title="发布建议"></a>发布建议</h2><ul>
+<li>图片建议放在 <code>source/images/</code> 下，使用相对路径（例如 <code>&quot;/images/landscape-1.jpg&quot;</code>）。</li>
+<li>保存后 Hexo 会自动刷新，进入页面点击侧栏分类即可看到对应内容。</li>
+</ul>
+<blockquote>
+<p>你可以把这篇文章复制为新的 Markdown，替换标题、日期、标签与正文内容，即可快速发布。</p>
+</blockquote>
+
+  </div>
+</article>
+  
+<script src="/macos.js"></script>
+
+</body>
+</html>

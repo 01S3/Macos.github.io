@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OMNI-DIRECTIONAL STUDIO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+  
+<link rel="stylesheet" href="/macos.css">
+
+<meta name="generator" content="Hexo 8.0.0"></head>
+<body style="margin:0;background:#e5e5e7;">
+  <article class="post" style="max-width:860px; margin:40px auto; padding:0 20px; line-height:1.8; color:#222;">
+  <h1 style="font-size:24px; margin:0 0 10px 0; font-weight:600; word-break:break-word; overflow-wrap:anywhere;"> MACOS 主题：文章栏使用技巧与 Markdown 写作规范（新手友好） </h1>
+  <div style="color:#666; font-size:12px; margin-bottom:20px;"> 2025/10/24 </div>
+
+  <style>
+    .post-content { font-size: 15px; line-height: 1.8; padding-bottom: 24px; }
+    .post-content h1, .post-content h2, .post-content h3, .post-content h4 { word-break: break-word; overflow-wrap: anywhere; }
+    .post-content img { max-width: 100%; height: auto; }
+
+    /* 行内代码保持浅色背景，阅读不打断正文 */
+    .post-content code { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; background: #f2f3f5; padding: 2px 4px; border-radius: 4px; }
+
+    /* 代码块：编辑器（Trae风格）深色配色 */
+    .post-content .highlight { overflow: hidden; background: transparent; }
+    .post-content .highlight table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+    .post-content .highlight td { vertical-align: top; }
+
+    /* 左列行号与右列代码统一顶部对齐与内边距，圆角矩形拼接 */
+    .post-content .highlight td.gutter { width: 2.8em; padding: 12px 10px; text-align: right; color: #7f7f7f; user-select: none; background: #1a1a1a; border: 1px solid #2a2a2a; border-right: 0; border-radius: 6px 0 0 6px; }
+    .post-content .highlight td.code { width: auto; padding: 12px; background: #1e1e1e; color: #d4d4d4; border: 1px solid #2a2a2a; border-left: 0; border-radius: 0 6px 6px 0; }
+
+    /* 单元格内的 pre 归零并统一字号/行高/字体 */
+    .post-content .highlight td.gutter pre,
+    .post-content .highlight td.code pre { margin: 0; padding: 0; background: transparent; border-radius: 0; font-size: 14px; line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* 行号不换行，代码可自动换行 */
+    .post-content .highlight td.gutter pre { white-space: pre; }
+    .post-content .highlight td.code pre { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+
+    /* Trae风格的语法高亮（同时兼容 highlight.js 与 Hexo 内置类名） */
+    .post-content .highlight .comment, .post-content .highlight .hljs-comment { color: #6a9955; }
+    .post-content .highlight .keyword, .post-content .highlight .hljs-keyword { color: #c586c0; }
+    .post-content .highlight .string, .post-content .highlight .hljs-string { color: #ce9178; }
+    .post-content .highlight .number, .post-content .highlight .hljs-number, .post-content .highlight .literal, .post-content .highlight .hljs-literal { color: #b5cea8; }
+    .post-content .highlight .title, .post-content .highlight .hljs-title, .post-content .highlight .function .title, .post-content .highlight .hljs-function .hljs-title { color: #dcdcaa; }
+    .post-content .highlight .attr, .post-content .highlight .hljs-attr, .post-content .highlight .params, .post-content .highlight .hljs-params, .post-content .highlight .variable, .post-content .highlight .hljs-variable { color: #9cdcfe; }
+    .post-content .highlight .built_in, .post-content .highlight .hljs-built_in { color: #4ec9b0; }
+    .post-content .highlight .meta, .post-content .highlight .hljs-meta { color: #c586c0; }
+    .post-content .highlight .operator, .post-content .highlight .hljs-operator, .post-content .highlight .punctuation, .post-content .highlight .hljs-punctuation { color: #d4d4d4; }
+
+    /* 在窄窗口隐藏行号栏时，让代码块变为完整圆角矩形 */
+    @media (max-width: 800px) {
+      .post-content .highlight td.gutter { display: none; }
+      .post-content .highlight td.code { width: 100%; border-left: 1px solid #2a2a2a; border-radius: 6px; }
+    }
+  </style>
+
+  <div class="post-content">
+    <blockquote>
+<p>本文是为开源用户准备的「上手文档」。读完它，你可以快速使用 MACOS 主题中的「文章栏（Article List）」来展示内容，并掌握常用的 Markdown 写作规范与注意事项。</p>
+</blockquote>
+<h2 id="1-什么是文章栏（Article-List）"><a href="#1-什么是文章栏（Article-List）" class="headerlink" title="1. 什么是文章栏（Article List）"></a>1. 什么是文章栏（Article List）</h2><ul>
+<li>位置：打开 <code>http://localhost:4000/macos/</code>，点击桌面图标「Survival Guide」，会弹出一个带左侧列表和右侧内容区的窗口。</li>
+<li>功能：左侧显示文章标题与日期，点击后右侧通过 iframe 加载文章正文（使用 <code>themes/macos/layout/post.ejs</code> 渲染）。</li>
+<li>体验：窗口支持拖动、置顶、自由缩放；标题与代码块在窄窗口会自动换行，便于阅读。</li>
+</ul>
+<h2 id="2-快速上手（0-基础）"><a href="#2-快速上手（0-基础）" class="headerlink" title="2. 快速上手（0 基础）"></a>2. 快速上手（0 基础）</h2><ul>
+<li>启动本地预览：在站点根目录运行 <code>npm run server</code>，浏览器打开 <code>http://localhost:4000/macos/</code>。</li>
+<li>打开文章栏：点击桌面图标「Survival Guide」。</li>
+<li>新增文章：在 <code>source/_posts/</code> 目录新建一个 <code>.md</code> 文件（见第 4 节模板），保存后刷新页面即可在列表里看到。</li>
+</ul>
+<h2 id="3-文章如何被收集与展示"><a href="#3-文章如何被收集与展示" class="headerlink" title="3. 文章如何被收集与展示"></a>3. 文章如何被收集与展示</h2><ul>
+<li>数据来源：所有 Hexo 文章（<code>site.posts</code>）会在主题页面序列化为一个全局变量：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// 文件：themes/macos/layout/macos.ejs</span><br><span class="line">&lt;script&gt;</span><br><span class="line">  window.__MACOS_POSTS__ = &lt;%- JSON.stringify(site.posts.sort(&#x27;date&#x27;, -1).map(function(p)&#123;</span><br><span class="line">    return &#123; title: p.title, date: date(p.date, &#x27;YYYY/MM/DD&#x27;), url: url_for(p.path) &#125;;</span><br><span class="line">  &#125;)) %&gt;;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>数据结构举例：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span> <span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;在主题中创建可交互窗口组件（范例）&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;date&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025/10/24&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/2025/10/24/survival-guide-01/&quot;</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span> <span class="attr">&quot;title&quot;</span><span class="punctuation">:</span> <span class="string">&quot;用 Hexo 管理数据驱动的相册&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;date&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025/10/24&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;url&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/2025/10/24/survival-guide-02/&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>交互逻辑：<code>themes/macos/source/macos.js</code> 中的 <code>openSurvivalGuideWindow()</code> 会创建窗口并渲染左侧列表；点击列表项后，右侧内容区加载 <code>item.data-url</code> 指向的文章地址：</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 片段：点击左侧文章项，在右侧以 iframe 打开正文</span></span><br><span class="line"><span class="keyword">var</span> items = win.<span class="title function_">querySelectorAll</span>(<span class="string">&#x27;.article-item&#x27;</span>);</span><br><span class="line">items.<span class="title function_">forEach</span>(<span class="keyword">function</span>(<span class="params">item</span>)&#123;</span><br><span class="line">  item.<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>, <span class="keyword">function</span>(<span class="params"></span>)&#123;</span><br><span class="line">    items.<span class="title function_">forEach</span>(<span class="keyword">function</span>(<span class="params">i</span>)&#123; i.<span class="property">style</span>.<span class="property">backgroundColor</span> = <span class="string">&#x27;&#x27;</span>; &#125;);</span><br><span class="line">    item.<span class="property">style</span>.<span class="property">backgroundColor</span> = <span class="string">&#x27;#e8e8e8&#x27;</span>;</span><br><span class="line">    <span class="keyword">var</span> url = item.<span class="title function_">getAttribute</span>(<span class="string">&#x27;data-url&#x27;</span>);</span><br><span class="line">    <span class="keyword">var</span> right = win.<span class="title function_">querySelector</span>(<span class="string">&#x27;.window-content &gt; div:nth-child(2)&#x27;</span>);</span><br><span class="line">    right.<span class="property">innerHTML</span> = <span class="string">&#x27;&lt;iframe src=&quot;&#x27;</span>+url+<span class="string">&#x27;&quot; style=&quot;width:100%; height:100%; border:0;&quot;&gt;&lt;/iframe&gt;&#x27;</span>;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>窗口相关函数位置：<ul>
+<li><code>createWindow(opts)</code>：创建主题内的窗口组件（标题、内容、宽高）。</li>
+<li><code>makeDraggable(win)</code>：让窗口可拖拽。</li>
+<li><code>openSurvivalGuideWindow()</code>：打开文章栏窗口（左列表、右内容）。</li>
+</ul>
+</li>
+</ul>
+<h2 id="4-Markdown-写作规范（面向-Hexo）"><a href="#4-Markdown-写作规范（面向-Hexo）" class="headerlink" title="4. Markdown 写作规范（面向 Hexo）"></a>4. Markdown 写作规范（面向 Hexo）</h2><ul>
+<li>文件位置：<code>source/_posts/</code>。</li>
+<li>文件命名：遵循 <code>_config.yml</code> 中 <code>new_post_name: :title.md</code>，中文标题也可直接作为文件名。</li>
+<li>基本前言区（Frontmatter）：</li>
+</ul>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 文章主标题（简短、有关键词）</span><br><span class="line">date: 2025-10-24 10:00:00</span><br><span class="line">tags:</span><br><span class="line"><span class="bullet">  -</span> macos</span><br><span class="line"><span class="bullet">  -</span> 指南</span><br><span class="line">categories:</span><br><span class="line"><span class="section">  - Docs</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line">这里是摘要或导语，建议 1～3 段。</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>正文推荐结构：</p>
+<ul>
+<li>使用层级清晰的标题：<code>## 胶囊式小节标题</code>。</li>
+<li>段落尽量短，变量名和函数名使用反引号包裹：如 <code>createWindow()</code>。</li>
+<li>中英文混排时，给长词预留换行空间（主题已支持自动换行）。</li>
+</ul>
+</li>
+<li><p>代码块与高亮：</p>
+<ul>
+<li>使用三引号围栏，并标注语言：</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 示例：函数说明</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">createWindow</span>(<span class="params">opts</span>)&#123;</span><br><span class="line">  <span class="keyword">var</span> win = <span class="variable language_">document</span>.<span class="title function_">createElement</span>(<span class="string">&#x27;div&#x27;</span>);</span><br><span class="line">  <span class="comment">// ... 初始化与插入到页面 ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>本主题已开启 <code>highlight.js</code> 且 <code>line_number: true, wrap: true</code>，长行会自动换行并显示行号。</p>
+</li>
+<li><p>图片与媒体：</p>
+<ul>
+<li>建议把资源放在 <code>source/</code> 下（例如 <code>source/images/xxx.png</code>），MD 内使用绝对路径：<code>![]( /images/xxx.png )</code>。</li>
+<li>图片默认最大宽度 100%，不会溢出窗口。</li>
+</ul>
+</li>
+</ul>
+<h2 id="5-我应该怎么写一篇面向-MACOS-主题的文章？（模板）"><a href="#5-我应该怎么写一篇面向-MACOS-主题的文章？（模板）" class="headerlink" title="5. 我应该怎么写一篇面向 MACOS 主题的文章？（模板）"></a>5. 我应该怎么写一篇面向 MACOS 主题的文章？（模板）</h2><p>复制下面模板，新建文件 <code>source/_posts/macos-how-to-write.md</code>：</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: MACOS 主题文章写作与展示的正确姿势</span><br><span class="line">date: 2025-10-24</span><br><span class="line">tags:</span><br><span class="line"><span class="bullet">  -</span> macos</span><br><span class="line"><span class="section">  - 使用指南</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line"><span class="section">## 目标</span></span><br><span class="line"><span class="bullet">-</span> 让文章在「Survival Guide」文章栏里显示，并且点击后右侧能正确展示正文。</span><br><span class="line"></span><br><span class="line"><span class="section">## 步骤 1：写前言区（Frontmatter）</span></span><br><span class="line"><span class="bullet">-</span> 填写 <span class="code">`title`</span>、<span class="code">`date`</span>、<span class="code">`tags`</span>。建议为标题加上核心关键词，便于检索。</span><br><span class="line"></span><br><span class="line"><span class="section">## 步骤 2：正文结构</span></span><br><span class="line"><span class="bullet">-</span> 按模块写：背景 → 操作步骤 → 代码 → 注意事项 → 总结。</span><br><span class="line"></span><br><span class="line"><span class="section">## 代码示例</span></span><br><span class="line"><span class="code">```js</span></span><br><span class="line"><span class="code">// 打开文章栏窗口（来源：themes/macos/source/macos.js）</span></span><br><span class="line"><span class="code">function openSurvivalGuideWindow()&#123;</span></span><br><span class="line"><span class="code">  // ... 省略创建窗口与渲染列表的代码 ...</span></span><br><span class="line"><span class="code">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
+<li>避免超长连续英文或链接（主题已支持自动断行，但适度换行更友好）。</li>
+<li>图片尽量压缩后再插入，避免加载过慢。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">保存并刷新主题页面，即可在左侧文章栏看到这篇文章。</span><br><span class="line"></span><br><span class="line">## 6. 常见问题（FAQ）</span><br><span class="line">- Q：列表里只有标题和日期，没有正文？</span><br><span class="line">  - A：确保存在 `themes/macos/layout/post.ejs`（本主题已内置），且页面脚本里 `window.__MACOS_POSTS__` 未报错。</span><br><span class="line">- Q：标题或代码不换行？</span><br><span class="line">  - A：主题已为 `h1~h4` 与 `pre/code` 添加了自动换行；如需始终横向滚动，可把 `pre` 的 `white-space` 改为 `pre` 并保留 `overflow-x: auto;`。</span><br><span class="line">- Q：行号栏太宽或挤压内容？</span><br><span class="line">  - A：已在主题中固定行号栏宽度并在窄窗口自动隐藏，可按需调整媒体查询阈值。</span><br><span class="line"></span><br><span class="line">## 7. 进阶：只展示特定标签的文章</span><br><span class="line">默认会展示所有文章。如果希望只显示带某标签（如 `guide`）的文章，可以在 `themes/macos/layout/macos.ejs` 中把数据构建改为：</span><br><span class="line"></span><br><span class="line">```ejs</span><br><span class="line">window.__MACOS_POSTS__ = &lt;%- JSON.stringify(</span><br><span class="line">  site.posts</span><br><span class="line">    .filter(p =&gt; (p.tags || []).map(t =&gt; t.name).includes(&#x27;guide&#x27;))</span><br><span class="line">    .sort(&#x27;date&#x27;, -1)</span><br><span class="line">    .map(p =&gt; (&#123; title: p.title, date: date(p.date, &#x27;YYYY/MM/DD&#x27;), url: url_for(p.path) &#125;))</span><br><span class="line">) %&gt;;</span><br></pre></td></tr></table></figure>
+
+<p>或者在每篇文章的 Frontmatter 里添加 <code>macos: true</code>，并在上面的过滤条件里改为 <code>p.macos === true</code>。</p>
+<h2 id="8-进阶：自定义窗口与交互"><a href="#8-进阶：自定义窗口与交互" class="headerlink" title="8. 进阶：自定义窗口与交互"></a>8. 进阶：自定义窗口与交互</h2><ul>
+<li>创建窗口：</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">createWindow</span>(&#123; <span class="attr">title</span>: <span class="string">&#x27;Article List&#x27;</span>, <span class="attr">contentHTML</span>: html, <span class="attr">width</span>: <span class="number">800</span>, <span class="attr">height</span>: <span class="number">600</span> &#125;);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>允许拖动：</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">makeDraggable</span>(win);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>桌面图标绑定：</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 根据图标标签文字绑定事件</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">bindDesktopIcons</span>(<span class="params"></span>)&#123;</span><br><span class="line">  <span class="keyword">var</span> icons = <span class="variable language_">document</span>.<span class="title function_">querySelectorAll</span>(<span class="string">&#x27;.desktop-icons .icon&#x27;</span>);</span><br><span class="line">  icons.<span class="title function_">forEach</span>(<span class="keyword">function</span>(<span class="params">icon</span>)&#123;</span><br><span class="line">    <span class="keyword">var</span> label = icon.<span class="title function_">querySelector</span>(<span class="string">&#x27;.icon-label&#x27;</span>).<span class="property">textContent</span>.<span class="title function_">trim</span>();</span><br><span class="line">    <span class="keyword">if</span> (label === <span class="string">&#x27;Survival Guide&#x27;</span>) icon.<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>, openSurvivalGuideWindow);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="9-目录与关键文件一览"><a href="#9-目录与关键文件一览" class="headerlink" title="9. 目录与关键文件一览"></a>9. 目录与关键文件一览</h2><ul>
+<li><code>themes/macos/layout/macos.ejs</code>：序列化文章数据到 <code>window.__MACOS_POSTS__</code>；页面结构。</li>
+<li><code>themes/macos/layout/post.ejs</code>：文章正文布局与样式（自动换行、代码高亮）。</li>
+<li><code>themes/macos/source/macos.js</code>：窗口创建、拖拽、文章栏交互。</li>
+<li><code>_config.yml</code>：Hexo 全局配置（<code>syntax_highlighter: highlight.js</code>、<code>highlight.line_number: true</code> 等）。</li>
+</ul>
+<p>—— 以上就是 MACOS 主题的文章栏使用技巧与 Markdown 写作规范。欢迎开源分享，别人照着本文即可快速使用与扩展这个主题。</p>
+<h2 id="徽标触发与阅读时长写法（Frontmatter）"><a href="#徽标触发与阅读时长写法（Frontmatter）" class="headerlink" title="徽标触发与阅读时长写法（Frontmatter）"></a>徽标触发与阅读时长写法（Frontmatter）</h2><p>在每篇 Markdown 的开头三条横线之间（Frontmatter）设置触发字段即可，无需改动正文内容。示例：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">&quot;MACOS 主题：文章栏使用技巧与 Markdown 写作规范（新手友好）&quot;</span></span><br><span class="line"><span class="attr">date:</span> <span class="number">2025-01-15 10:00:00</span></span><br><span class="line"><span class="comment"># 通过标签/分类触发 TOP/HOT（精确匹配，大小写不敏感）</span></span><br><span class="line"><span class="attr">tags:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">guide</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">置顶</span>      <span class="comment"># 会触发 TOP</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">热门</span>      <span class="comment"># 会触发 HOT</span></span><br><span class="line"><span class="attr">categories:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">教程</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">精选</span>      <span class="comment"># 会触发 TOP</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 也可直接用显式布尔字段（优先级高于标签/分类）</span></span><br><span class="line"><span class="attr">top:</span> <span class="literal">true</span>        <span class="comment"># 触发 TOP</span></span><br><span class="line"><span class="comment"># featured: true # 同样触发 TOP</span></span><br><span class="line"><span class="attr">hot:</span> <span class="literal">true</span>        <span class="comment"># 触发 HOT</span></span><br><span class="line"><span class="comment"># popular: true  # 同样触发 HOT</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 阅读时长（可选，侧栏显示：约 N min）</span></span><br><span class="line"><span class="attr">minutes:</span> <span class="number">6</span>       <span class="comment"># 或 readingTime: 6 / read_time: 6 / readtime: 6</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>触发优先级：显式字段（<code>top/featured/hot/popular</code>）优先于标签&#x2F;分类中的近义词；NEW 徽标仅由发布时间判断（默认 10 天内）。</li>
+<li>TOP 近义词（标签&#x2F;分类中使用任一均可）：<code>top</code>、<code>置顶</code>、<code>精选</code>、<code>featured</code>。</li>
+<li>HOT 近义词：<code>hot</code>、<code>热门</code>、<code>popular</code>、<code>trend</code>。</li>
+<li>NEW 规则：根据 <code>date</code> 与当前时间计算，默认 10 天内显示（可在 <code>themes/macos/source/macos.js</code> 调整）。</li>
+<li>阅读时长：在 Frontmatter 提供 <code>minutes</code> 或同义字段，侧栏将显示“约 N min”。</li>
+</ul>
+<h3 id="数据串联说明（无需改动）"><a href="#数据串联说明（无需改动）" class="headerlink" title="数据串联说明（无需改动）"></a>数据串联说明（无需改动）</h3><ul>
+<li>主题已在 <code>themes/macos/layout/macos.ejs</code> 中将 <code>tags/categories/top/featured/hot/popular/readingTime</code> 一并序列化到 <code>window.__MACOS_POSTS__</code>。</li>
+<li>侧栏脚本 <code>themes/macos/source/macos.js</code> 会自动根据上述字段判断并渲染徽标（TOP&#x2F;HOT&#x2F;NEW）与阅读时长。</li>
+</ul>
+<h3 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h3><ul>
+<li>没有任何徽标？请确认 Frontmatter 已包含标签&#x2F;分类或显式字段，并保存后重新生成预览。</li>
+<li>标签&#x2F;分类不生效？确保词语是上述近义词之一，且非拼写错误；匹配为“精确包含（大小写不敏感）”。</li>
+<li>想扩大匹配范围？可以在 <code>macos.js</code> 中扩展近义词列表或改为更宽松的包含匹配。我可以帮你按需调整。</li>
+</ul>
+
+  </div>
+</article>
+  
+<script src="/macos.js"></script>
+
+</body>
+</html>
