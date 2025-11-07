@@ -2058,7 +2058,7 @@ function openPhotoModal(url){
   // 常量定义
   const MODAL_Z_INDEX = 10000;
   const FADE_DURATION = 160;
-  const IMAGE_MAX_SCALE = 3;
+  const IMAGE_MAX_SCALE = 5;
   const DOUBLE_TAP_THRESHOLD = 250;
   const WHEEL_SCALE_FACTOR = 0.92;
   const CONTAINER_PADDING = 24;
@@ -2161,7 +2161,7 @@ function openPhotoModal(url){
    }
    
    function applyTransform(){ 
-     img.style.transform = 'translate(' + Math.round(tx) + 'px,' + Math.round(ty) + 'px) scale(' + scale + ')'; 
+     img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; 
    }
    
    // 初始化基准尺寸
@@ -2199,7 +2199,12 @@ function openPhotoModal(url){
        var a = e.touches[0], b = e.touches[1];
        var d = dist2(a,b);
        var prevScale = scale;
-       scale = Math.min(maxScale, Math.max(minScale, startScale * (d / (startDist || d))));
+       // 优化缩放计算，提高跟手感
+       var scaleRatio = startDist > 0 ? d / startDist : 1;
+       var targetScale = startScale * scaleRatio;
+       // 平滑过渡到目标缩放值，避免突变
+       scale = scale + (targetScale - scale) * 0.8;
+       scale = Math.min(maxScale, Math.max(minScale, scale));
        
        // 当从原始大小放大时，移除尺寸限制
        if (prevScale === 1 && scale > 1) {
