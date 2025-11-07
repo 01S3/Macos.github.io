@@ -2096,6 +2096,9 @@ function openPhotoModal(url){
 
    // 根据视口与图片原始尺寸动态适配，初始显示不超过80%但允许放大超出
    function fitImage(customWidth = null, customHeight = null){
+     // 如果图片已经放大，不重新计算尺寸
+     if (scale > 1) return;
+     
      // 使用clientWidth/clientHeight获取实际可用视口尺寸
      var vw = customWidth !== null ? customWidth : wrap.clientWidth;
      var vh = customHeight !== null ? customHeight : wrap.clientHeight;
@@ -2115,14 +2118,12 @@ function openPhotoModal(url){
      var boxRatio = contentWidth / contentHeight;
      
      // 初始显示时适配容器，但放大时允许超出
-     if (scale === 1) {
-       if (ratio > boxRatio){
-         img.style.width = contentWidth + 'px';
-         img.style.height = 'auto';
-       } else {
-         img.style.height = contentHeight + 'px';
-         img.style.width = 'auto';
-       }
+     if (ratio > boxRatio){
+       img.style.width = contentWidth + 'px';
+       img.style.height = 'auto';
+     } else {
+       img.style.height = contentHeight + 'px';
+       img.style.width = 'auto';
      }
    }
 
@@ -2132,7 +2133,12 @@ function openPhotoModal(url){
    requestAnimationFrame(function(){ overlay.style.opacity = '1'; });
    fitImage();
    img.addEventListener('load', fitImage, { once: true });
-   window.addEventListener('resize', fitImage);
+   window.addEventListener('resize', function() {
+     // 只有在图片未放大时才重新适配窗口大小
+     if (scale === 1) {
+       fitImage();
+     }
+   });
 
    // 触控放大与拖拽
    wrap.style.touchAction = 'none';
@@ -2214,9 +2220,23 @@ function openPhotoModal(url){
    }, { passive: false });
 
    wrap.addEventListener('touchend', function(e){
-     if (e.touches.length === 0){ isPanning = false; }
+     if (e.touches.length === 0){ 
+       isPanning = false; 
+       // 保存当前缩放状态，确保手指离开后不会恢复原样
+       if (scale > 1) {
+         img.style.maxWidth = 'none';
+         img.style.maxHeight = 'none';
+       }
+     }
    });
-   wrap.addEventListener('touchcancel', function(){ isPanning = false; });
+   wrap.addEventListener('touchcancel', function(){ 
+     isPanning = false; 
+     // 保存当前缩放状态，确保触摸取消后不会恢复原样
+     if (scale > 1) {
+       img.style.maxWidth = 'none';
+       img.style.maxHeight = 'none';
+     }
+   });
 
    // 双击（双指连击/快速两次单指轻触）切换缩放
    var lastTap = 0;

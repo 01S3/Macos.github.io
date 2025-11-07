@@ -54,6 +54,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
      /* 以圆心定位：元素顶边 = 圆心 - 半个缩放后的高度 */
      top: calc(var(--pill-center) - ((var(--pill-h) * var(--pill-scale)) / 2));
      transform: translate(-50%, 0) scale(var(--pill-scale));
+     -webkit-transform: translate(-50%, 0) scale(var(--pill-scale));
      width: var(--pill-w);
      height: var(--pill-h);
      background: #000; /* 纯黑 */
@@ -64,6 +65,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
      pointer-events: none;
      box-sizing: border-box; /* 让可视尺寸包含描边，避免中心计算被边框影响 */
      transform-origin: top center;
+     -webkit-transform-origin: top center;
      will-change: top, transform;
       transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
                   transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
