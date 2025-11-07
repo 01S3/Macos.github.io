@@ -2097,7 +2097,7 @@ function openPhotoModal(url){
    // 根据视口与图片原始尺寸动态适配，初始显示不超过80%但允许放大超出
    function fitImage(customWidth = null, customHeight = null){
      // 如果图片已经放大，不重新计算尺寸
-     if (scale > 1) return;
+     if (scale > 1.01) return; // 使用小阈值避免微小缩放
      
      // 使用clientWidth/clientHeight获取实际可用视口尺寸
      var vw = customWidth !== null ? customWidth : wrap.clientWidth;
@@ -2135,7 +2135,7 @@ function openPhotoModal(url){
    img.addEventListener('load', fitImage, { once: true });
    window.addEventListener('resize', function() {
      // 只有在图片未放大时才重新适配窗口大小
-     if (scale === 1) {
+     if (scale <= 1.01) { // 使用小阈值避免微小缩放
        fitImage();
      }
    });
@@ -2192,6 +2192,16 @@ function openPhotoModal(url){
        isPanning = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
      }
    }, { passive: false });
+   
+   // 触摸取消事件处理
+   wrap.addEventListener('touchcancel', function(){ 
+     isPanning = false; 
+     // 无论放大多少，都保存当前缩放状态
+     if (scale > 1.01) { // 使用小阈值避免微小缩放
+       img.style.maxWidth = 'none';
+       img.style.maxHeight = 'none';
+     }
+   });
 
    wrap.addEventListener('touchmove', function(e){
      if (e.touches.length === 2){
@@ -2207,7 +2217,7 @@ function openPhotoModal(url){
        scale = Math.min(maxScale, Math.max(minScale, scale));
        
        // 当从原始大小放大时，移除尺寸限制
-       if (prevScale === 1 && scale > 1) {
+       if (prevScale <= 1.01 && scale > 1.01) { // 使用统一的阈值判断
          img.style.maxWidth = 'none';
          img.style.maxHeight = 'none';
        }
@@ -2224,33 +2234,25 @@ function openPhotoModal(url){
      }
    }, { passive: false });
 
+   // 合并touchend事件处理，确保缩放状态正确保存
+   var lastTap = 0;
    wrap.addEventListener('touchend', function(e){
+     // 处理双指缩放结束
      if (e.touches.length === 0){ 
        isPanning = false; 
-       // 保存当前缩放状态，确保手指离开后不会恢复原样
-       if (scale > 1) {
+       // 无论放大多少，都保存当前缩放状态
+       if (scale > 1.01) { // 使用小阈值避免微小缩放
          img.style.maxWidth = 'none';
          img.style.maxHeight = 'none';
        }
      }
-   });
-   wrap.addEventListener('touchcancel', function(){ 
-     isPanning = false; 
-     // 保存当前缩放状态，确保触摸取消后不会恢复原样
-     if (scale > 1) {
-       img.style.maxWidth = 'none';
-       img.style.maxHeight = 'none';
-     }
-   });
-
-   // 双击（双指连击/快速两次单指轻触）切换缩放
-   var lastTap = 0;
-   wrap.addEventListener('touchend', function(e){
+     
+     // 处理双击事件
      if (!e.changedTouches || e.changedTouches.length !== 1) return;
      var now = Date.now();
      if (now - lastTap < DOUBLE_TAP_THRESHOLD){
        e.preventDefault();
-       if (scale > 1){
+       if (scale > 1.01){ // 使用统一的阈值判断
          scale = 1; 
          tx = 0; 
          ty = 0; 
@@ -2287,7 +2289,7 @@ function openPhotoModal(url){
      img.style.transformOrigin = ox + '% ' + oy + '%';
      
      // 当从原始大小放大时，移除尺寸限制
-     if (scale === 1 && newScale > 1) {
+     if (scale <= 1.01 && newScale > 1.01) { // 使用统一的阈值判断
        img.style.maxWidth = 'none';
        img.style.maxHeight = 'none';
      }
