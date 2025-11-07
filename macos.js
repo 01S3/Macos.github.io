@@ -2210,7 +2210,8 @@ function openPhotoModal(url){
        var d = dist2(a,b);
        var prevScale = scale;
        // 优化缩放计算，提高跟手感
-       var scaleRatio = startDist > 0 ? d / startDist : 1;
+       // 反转缩放比例，使双指向内放大，向外缩小
+       var scaleRatio = startDist > 0 ? startDist / d : 1;
        var targetScale = startScale * scaleRatio;
        // 平滑过渡到目标缩放值，避免突变
        scale = scale + (targetScale - scale) * 0.8;
