@@ -30,8 +30,9 @@
       var parent = document.body || document.documentElement;
       if (parent) parent.appendChild(el);
       else window.addEventListener('DOMContentLoaded', function(){
-        (document.body || document.documentElement).appendChild(el);
-      });
+            (document.body || document.documentElement).appendChild(el);
+          });
+
       return el;
     }
     function showErrorBanner(message, detail){
@@ -39,7 +40,7 @@
         var el = ensureBanner();
         var msg = String(message || 'Error');
         var det = detail ? String(detail) : '';
-        el.innerHTML = '<strong>JS Error:</strong> ' + msg + (det ? '<br><span style="opacity:.8">'+det+'</span>' : '');
+        el.innerHTML = '<strong>JS Error:</strong> ' + msg + (det ? '<br><span style="opacity:.8;">'+det+'</span>' : '');
         el.style.display = 'block';
         console.error('[macos-theme:error]', message, detail || '');
       } catch (e) { /* noop */ }
@@ -65,7 +66,8 @@
       var z = parseInt(window.getComputedStyle(w).zIndex || w.style.zIndex || '1000', 10);
       if (!isNaN(z) && z > maxZ) maxZ = z;
     });
-    win.style.zIndex = String(maxZ + 1);
+    // 确保窗口z-index不会超过灵动岛(最低9998)
+    win.style.zIndex = String(Math.min(maxZ + 1, 9997));
   }
 
   // 视口边界收敛：确保窗口在容器内，避免产生滚动条
@@ -130,11 +132,10 @@
     function scheduleApply(){
       if (rafId) return;
       rafId = requestAnimationFrame(function(){
-        rafId = null;
-        win.style.transform = 'translate3d(' + dX + 'px,' + dY + 'px,0)';
-      });
+            rafId = null;
+            win.style.transform = 'translate3d(' + dX + 'px,' + dY + 'px,0)';
+            });
     }
-
     header.addEventListener('mousedown', function(e){
       // 当点击窗口控制按钮时，不触发拖动
       if (e.target.closest('.window-controls') || e.target.closest('.window-control')) return;
@@ -197,28 +198,71 @@
 
     if (btnClose){
       btnClose.addEventListener('click', function(){
-        win.remove();
-        // 移动端：若已无任何窗口，恢复显示便签
-        if (window.innerWidth <= 768){
-          var note = document.querySelector('.sticky-note');
-          if (note){
-            if (document.querySelectorAll('.macos-window').length === 0){
-              note.style.display = '';
+          win.remove();
+          // 移动端：若已无任何窗口，恢复显示便签
+          if (window.innerWidth <= 768){
+            var note = document.querySelector('.sticky-note');
+            if (note){
+              if (document.querySelectorAll('.macos-window').length === 0){
+                note.style.display = '';
+              }
             }
           }
-        }
       });
     }
     if (btnMin){
       btnMin.addEventListener('click', function(){
         // 保存当前尺寸和位置便于恢复（按迁移前行为）
-        win.dataset.preMinimizedWidth = win.style.width;
-        win.dataset.preMinimizedHeight = win.style.height;
-        win.dataset.preMinimizedTop = win.style.top;
-        win.dataset.preMinimizedLeft = win.style.left;
+        // 保存原始容器尺寸（考虑盒模型）、窗口像素位置和高精度相对比例
+          // 使用offsetParent获取定位容器（更可靠）
+          const container = win.offsetParent || document.body;
+          // 确保容器引用稳定
+          if (!container) {
+            console.error('无法确定定位容器，使用body作为回退');
+          }
+          const containerStyle = getComputedStyle(container);
+          const containerRect = container.getBoundingClientRect();
+          // 根据盒模型计算容器内容区域尺寸
+          const boxSizing = containerStyle.boxSizing || 'content-box';
+          let containerContentWidth, containerContentHeight;
+          if (boxSizing === 'border-box') {
+            // border-box: width包含padding和border，需从CSS width计算内容宽度
+            // 处理非像素宽度（如auto或百分比）
+            const computedWidth = parseFloat(containerStyle.width);
+            const computedHeight = parseFloat(containerStyle.height);
+            // 当width为auto或百分比时，使用boundingRect作为回退
+            const baseWidth = isNaN(computedWidth) ? containerRect.width : computedWidth;
+            const baseHeight = isNaN(computedHeight) ? containerRect.height : computedHeight;
+            containerContentWidth = baseWidth - parseFloat(containerStyle.paddingLeft) - parseFloat(containerStyle.paddingRight) - parseFloat(containerStyle.borderLeftWidth) - parseFloat(containerStyle.borderRightWidth);
+            containerContentHeight = baseHeight - parseFloat(containerStyle.paddingTop) - parseFloat(containerStyle.paddingBottom) - parseFloat(containerStyle.borderTopWidth) - parseFloat(containerStyle.borderBottomWidth);
+          } else {
+            // content-box: width不包含padding和border，从boundingRect计算
+            containerContentWidth = containerRect.width - parseFloat(containerStyle.paddingLeft) - parseFloat(containerStyle.paddingRight) - parseFloat(containerStyle.borderLeftWidth) - parseFloat(containerStyle.borderRightWidth);
+            containerContentHeight = containerRect.height - parseFloat(containerStyle.paddingTop) - parseFloat(containerStyle.paddingBottom) - parseFloat(containerStyle.borderTopWidth) - parseFloat(containerStyle.borderBottomWidth);
+          }
+          const winRect = win.getBoundingClientRect();
+          // 保存容器原始尺寸
+          // 保存容器内容区域尺寸而非边界框尺寸
+          win.dataset.containerWidth = containerContentWidth + 'px';
+          win.dataset.containerHeight = containerContentHeight + 'px';
+          // 保存窗口原始像素位置
+          win.dataset.preMinimizedWidth = winRect.width;
+          win.dataset.preMinimizedHeight = winRect.height;
+          win.dataset.preMinimizedTop = (winRect.top - containerRect.top) + 'px';
+          win.dataset.preMinimizedLeft = (winRect.left - containerRect.left) + 'px';
+// 初始化保存窗口原始尺寸
+        if (!win.dataset.preMinimizedWidth) {
+          win.dataset.preMinimizedWidth = winRect.width + 'px';
+          win.dataset.preMinimizedHeight = winRect.height + 'px';
+        }
+        // 保存高精度相对比例
+          win.dataset.relativeWidth = (winRect.width / containerRect.width).toFixed(4);
+          win.dataset.relativeHeight = (winRect.height / containerRect.height).toFixed(4);
+          win.dataset.relativeTop = ((winRect.top - containerRect.top) / containerRect.height).toFixed(4);
+          win.dataset.relativeLeft = ((winRect.left - containerRect.left) / containerRect.width).toFixed(4);
         // 额外保存内容区的显示样式和窗口的最小高度，避免恢复后布局改变
         win.dataset.preContentDisplay = content ? (content.style.display || window.getComputedStyle(content).display) : '';
-        win.dataset.preMinimizedMinHeight = win.style.minHeight || '';
+        win.dataset.preMinimizedMinHeight = window.getComputedStyle(win).minHeight;
         // 设为最小化：仅保留标题栏高度，隐藏内容
         win.dataset.minimized = 'true';
         win.style.height = '32px';
@@ -231,30 +275,52 @@
         // 仅在最小化时恢复，取消全屏切换以匹配迁移前行为
         if (win.dataset.minimized === 'true'){
           win.dataset.minimized = 'false';
+          win.dataset.justRestored = 'true';
           // 恢复内容区显示样式（例如 flex），避免从 none 回到 block 导致布局变化
           if (content) content.style.display = win.dataset.preContentDisplay || '';
           // 恢复窗口最小高度，保持原有约束（如 4:3 的最小高度）
           win.style.minHeight = win.dataset.preMinimizedMinHeight || '';
-          win.style.height = '';
+          win.style.boxSizing = 'border-box';
           // 恢复之前保存的尺寸与位置（提供默认值以防空）
-          var savedWidth = win.dataset.preMinimizedWidth || win.style.width || '400px';
-          var savedHeight = win.dataset.preMinimizedHeight || win.style.height || '300px';
-          var savedTop = win.dataset.preMinimizedTop || win.style.top || '100px';
-          var savedLeft = win.dataset.preMinimizedLeft || win.style.left || '100px';
+          var savedWidth = win.dataset.preMinimizedWidth;
+          var savedHeight = win.dataset.preMinimizedHeight;
+          // 应用保存的原始尺寸
+          win.style.width = savedWidth + 'px';
+          win.style.height = savedHeight + 'px';
+          // 恢复位置
+          if (win.dataset.hasInlineTop === 'true') {
+            win.style.top = win.dataset.preMinimizedTop;
+          } else {
+            win.style.top = ''; // 恢复CSS控制
+          }
+          if (win.dataset.hasInlineLeft === 'true') {
+            win.style.left = win.dataset.preMinimizedLeft;
+          } else {
+            win.style.left = ''; // 恢复CSS控制
+          }
           win.style.transform = 'none';
-          win.style.width = savedWidth;
-          win.style.height = savedHeight;
-          win.style.top = savedTop;
-          win.style.left = savedLeft;
           // 边界约束（基于容器）
           var container = win.parentElement;
-          var maxLeft = container.clientWidth - parseFloat(savedWidth);
-          var maxTop = container.clientHeight - parseFloat(savedHeight);
-          var boundedLeft = Math.max(0, Math.min(parseFloat(savedLeft), maxLeft));
-          var boundedTop = Math.max(0, Math.min(parseFloat(savedTop), maxTop));
-          win.style.left = boundedLeft + 'px';
-          win.style.top = boundedTop + 'px';
-          bringToFront(win);
+          if (container) {
+            var containerRect = container.getBoundingClientRect();
+            var winRect = win.getBoundingClientRect();
+            // 确保窗口不超出容器右边界
+            if (parseInt(win.style.left) + winRect.width > containerRect.width) {
+              win.style.left = (containerRect.width - winRect.width) + 'px';
+            }
+            // 确保窗口不超出容器下边界
+            if (parseInt(win.style.top) + winRect.height > containerRect.height) {
+              win.style.top = (containerRect.height - winRect.height) + 'px';
+            }
+            // 确保窗口不超出容器上边界
+            if (parseInt(win.style.top) < 0) {
+              win.style.top = '0px';
+            }
+            // 确保窗口不超出容器左边界
+            if (parseInt(win.style.left) < 0) {
+              win.style.left = '0px';
+            }
+          }
         }
         // 非最小化状态下不做放大/全屏，保持与旧版一致
       });
@@ -268,7 +334,7 @@
   function getRandomGradient() {
     const hue1 = Math.floor(Math.random() * 360);
     const hue2 = (hue1 + Math.floor(Math.random() * 60) + 30) % 360;
-    return `linear-gradient(135deg, hsl(${hue1}, 70%, 60%), hsl(${hue2}, 70%, 60%))`;
+    return 'linear-gradient(135deg, hsl(' + hue1 + ', 70%, 60%), hsl(' + hue2 + ', 70%, 60%))';
 }
 
 function initStickyNoteDrag(){
@@ -281,7 +347,7 @@ function initStickyNoteDrag(){
     // 定时更新渐变（5秒一次）
     let gradientTimeout;
     function scheduleNextGradient() {
-        gradientTimeout = setTimeout(() => {
+        gradientTimeout = setTimeout(function() {
             note.style.background = getRandomGradient();
             scheduleNextGradient();
         }, 5000);
@@ -290,8 +356,8 @@ function initStickyNoteDrag(){
     
     // 窗口隐藏时清除定时器
     let previousDisplay = note.style.display;
-    const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
             if (mutation.attributeName === 'style') {
                 const currentDisplay = note.style.display;
                 if (currentDisplay !== previousDisplay) {
@@ -307,7 +373,7 @@ function initStickyNoteDrag(){
             }
         });
     });
-    observer.observe(note, { attributes: true })
+    observer.observe(note, { attributes: true });
     var isDragging = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
     note.addEventListener('mousedown', function(e){
       isDragging = true;
@@ -369,6 +435,9 @@ function initStickyNoteDrag(){
     win.style.left = left + 'px';
     win.style.top = top + 'px';
     win.style.transform = 'none';
+    // 标记位置是通过内联样式设置的，以便恢复时使用
+    win.dataset.hasInlineTop = 'true';
+    win.dataset.hasInlineLeft = 'true';
     bringToFront(win);
     makeDraggable(win);
     wireControls(win);
@@ -529,10 +598,11 @@ function openSurvivalGuideWindow(){
   if (window.innerWidth <= 768){
     var container = document.querySelector('.macos-theme') || document.body;
     var mobileW = Math.round(container.clientWidth * 0.9);
-    win.style.width = mobileW + 'px';
-    win.style.minWidth = mobileW + 'px';
-    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
-    win.style.left = left + 'px';
+    win.style.width = '90vw';
+      win.style.minWidth = '90vw';
+      win.style.left = '5vw';
+    // 更新标志，因为left样式被修改了
+    win.dataset.hasInlineLeft = 'true';
   } else {
     win.style.minWidth = '400px';
   }
@@ -601,7 +671,7 @@ function openSurvivalGuideWindow(){
       mask.style.top = '0';
       mask.style.width = 'calc(100% - '+baseWidth+'px)';
       mask.style.height = '100%';
-      mask.style.background = 'transparent';
+      mask.style.background = 'rgba(0,0,0,0.01)';
       mask.style.zIndex = '25';
       mask.style.display = collapsed ? 'none' : 'block';
       contentEl.appendChild(mask);
@@ -782,6 +852,7 @@ function openSurvivalGuideWindow(){
     win.style.left = Math.max(0, Math.min(curLeft, maxLeft)) + 'px';
     win.style.top = Math.max(0, Math.min(curTop, maxTop)) + 'px';
   }
+  // 使用闭包确保adjustSize函数始终可以访问win变量
   window.addEventListener('resize', adjustSize);
   var originalRemove = win.remove;
   win.remove = function(){ window.removeEventListener('resize', adjustSize); originalRemove.call(this); };
@@ -827,26 +898,25 @@ function openAboutMeWindows(){
   }
   // Portfolio Showcase（图片展示）
   var wPortfolio = createFixedWindow('Portfolio Showcase',
-    '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat.svg') : '/images/cat.svg') + '" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
-    </div>', 5, 25, 1001);
+    '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">' +
+      '<img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat.svg') : '/images/cat.svg') + '" alt="Portfolio Showcase" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">' +
+    '</div>', 5, 25, 1001);
   // About Me（文本）
-  var wAbout = createFixedWindow('About Me', `
-    <div class="about-me-content">
-      <div class="about-me-title">Hello！！我是 WANG''，你好！！地球村的良民~</div>
-      <ul class="about-me-list">
-        <li>纯<span class="highlight">AI</span>搭建的网站，加上一缪缪自己的审美（<span class="accent">yes~</span>）</li>
-        <li>建议不要问关于代码的问题，因为我<span class="accent">真不知道</span>！</li>
-        <li>目前开发的APP只有“<span class="highlight">相册</span>”和“<span class="highlight">Survival Guide</span>”，我管这个叫生存指南，其实就是博客文章；相册有自己跑的<span class="accent">AIGC</span>随便吃，要神秘代码可以找我~</li>
-        <li>随心情建设网站（<span class="warn">下雨天不更！！</span>）</li>
-      </ul>
-    </div>
-  `, 15, 15, 1003);
+  var wAbout = createFixedWindow('About Me', 
+    '<div class="about-me-content">' +
+      '<div class="about-me-title">Hello！！我是 WANG，你好！！地球村的良民~</div>' +
+        '<ul class="about-me-list">' +
+          '<li>纯<span class="highlight">AI</span>搭建的网站，加上一缪缪自己的审美（<span class="accent">yes~</span>）</li>' +
+          '<li>建议不要问关于代码的问题，因为我<span class="accent">真不知道</span>！</li>' +
+          '<li>目前开发的APP只有\'<span class="highlight">相册</span>\'和\'<span class="highlight">Survival Guide</span>\'，我管这个叫生存指南，其实就是博客文章；相册有自己跑的<span class="accent">AIGC</span>随便吃，要神秘代码可以找我~</li>' +
+          '<li>随心情建设网站（<span class="warn">下雨天不更！！</span>）</li>' +
+        '</ul>' +
+      '</div>', 15, 15, 1003);
   // Design Cases（图片展示）
   var wDesign = createFixedWindow('Design Cases',
-    '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">\
-      <img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat-2.svg') : '/images/cat-2.svg') + '" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">\
-    </div>', 22, 40, 1002);
+    '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">' +
+      '<img src="' + (window.__MACOS_ASSET__ ? window.__MACOS_ASSET__('images/cat-2.svg') : '/images/cat-2.svg') + '" alt="Design Cases" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:contain;">' +
+    '</div>', 22, 40, 1002);
 
   // 移动端：将三个窗口改为抽屉式居中排列，点击标题展开其余折叠
   if (window.innerWidth <= 768){
@@ -918,6 +988,13 @@ function openAboutMeWindows(){
       });
     }
     wins.forEach(attachMinimizeCollapse);
+    // 监听窗口大小变化，重新布局抽屉
+    function handleResize() {
+      var selectedWin = wins.find(function(win) { return win && win.dataset.collapsed === 'false'; });
+      layoutMobileDrawer(selectedWin || wAbout);
+    }
+    window.addEventListener('resize', handleResize);
+    // 初始布局
     layoutMobileDrawer(wAbout);
   }
 }
@@ -1048,12 +1125,11 @@ function openPhotosWindow(){
 
   // 移动端：窗口宽度 90%，居中；左侧相册栏改为悬浮折叠抽屉（与文章列表一致）
   if (window.innerWidth <= 768){
-    var container = document.querySelector('.macos-theme') || document.body;
-    var mobileW = Math.round(container.clientWidth * 0.9);
-    win.style.width = mobileW + 'px';
-    win.style.minWidth = mobileW + 'px';
-    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
-    win.style.left = left + 'px';
+    win.style.width = '90vw';
+      win.style.minWidth = '90vw';
+      win.style.left = '5vw';
+    // 更新标志，因为left样式被修改了
+    win.dataset.hasInlineLeft = 'true';
   }
   if (contentEl){
     contentEl.style.position = 'relative';
@@ -1084,7 +1160,7 @@ function openPhotosWindow(){
       mask.style.top = '0';
       mask.style.width = 'calc(100% - '+baseWidth+'px)';
       mask.style.height = '100%';
-      mask.style.background = 'transparent';
+      mask.style.background = 'rgba(0,0,0,0.01)';
       mask.style.zIndex = '25';
       mask.style.display = 'block';
       contentEl.appendChild(mask);
@@ -1203,8 +1279,10 @@ function openPhotosWindow(){
       var showFav = (section === 'favorites');
       var favBadgeHTML = showFav ? '  <div class="fav-badge" style="pointer-events:none; position:absolute; top:6px; right:6px; color:#1677ff; font-size:20px; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,0.18);">♥</div>' : '';
       return [
-        '<div '+cellAttrs+' style="aspect-ratio:1/1; background-color:#f0f0f0; border-radius:6px; overflow:hidden; position:relative; cursor:zoom-in;">',
-        '  <img src="'+url+'" loading="lazy" decoding="async" style="width:100%; height:100%; object-fit:cover; display:block; '+imgExtra+'" />',
+        '<div '+cellAttrs+' style="background-color:#f0f0f0; border-radius:6px; overflow:hidden; position:relative; cursor:zoom-in;">',
+        '  <div style="padding-top:100%;">',
+        '    <img src="'+url+'" loading="lazy" decoding="async" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; display:block; '+imgExtra+'" />',
+        '  </div>',
         (isSensitive ? '  <div class="blur-mask" style="position:absolute; inset:0; border-radius:inherit; background:rgba(0,0,0,0.35); backdrop-filter: blur(3px); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px;">NSFW</div>' : ''),
         newBadgeHTML,
         favBadgeHTML,
@@ -1288,8 +1366,7 @@ function openPhotosWindow(){
       if (url) openPhotoModal(url);
     });
   }
- 
-   var baseW = 800, baseH = 600, ratio = baseW/baseH;
+  var baseW = 800, baseH = 600, ratio = baseW/baseH;
   function adjustSize(){
     if (win.dataset.minimized === 'true') return;
     var screenW = window.innerWidth, screenH = window.innerHeight;
@@ -1363,6 +1440,50 @@ function bindDesktopIcons(){
       icon.addEventListener('click', openTrashWindow);
     }
   });
+}
+
+// 绑定菜单项点击事件
+function bindMenuItems(){
+  var wangItem = document.querySelector('.menu-items .menu-item:first-child');
+  if (wangItem && wangItem.textContent.trim() === 'WANG') {
+    wangItem.addEventListener('click', function() {
+      // 关闭所有打开的窗口
+      var windows = document.querySelectorAll('.macos-window');
+      windows.forEach(function(win) {
+        win.remove();
+      });
+      
+      // 重置页面状态
+      // 重置灵动岛状态
+      var menuBar = document.querySelector('.macos-theme .menu-bar');
+      if (menuBar) {
+        menuBar.classList.remove('expanded', 'photo-mode', 'paused');
+        var isExpanded = false;
+        var currentIndex = 0;
+        var modeIndex = 0;
+        // 重新初始化灵动岛
+        if (typeof renderCurrent === 'function') {
+          renderCurrent(isExpanded);
+        }
+      }
+      
+      // 重置移动端菜单
+      var mobileMenu = document.getElementById('mobileMenu');
+      if (mobileMenu) {
+        mobileMenu.classList.remove('open');
+        var items = mobileMenu.querySelectorAll('.mobile-menu-list li');
+        items.forEach(function(i) {
+          i.classList.remove('active');
+        });
+      }
+      
+      // 确保便签显示
+      var note = document.querySelector('.sticky-note');
+      if (note) {
+        note.style.display = '';
+      }
+    });
+  }
 }
 
 function initMenuClock(){
@@ -1495,11 +1616,11 @@ function openEmptySecretWindow(){
   // 移动端：宽度设置为设备宽度的 90%，并水平居中
   if (window.innerWidth <= 768 && win){
     var container = document.querySelector('.macos-theme') || document.body;
-    var mobileW = Math.round(container.clientWidth * 0.9);
-    win.style.width = mobileW + 'px';
-    win.style.minWidth = mobileW + 'px';
-    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
-    win.style.left = left + 'px';
+    win.style.width = '90vw';
+      win.style.minWidth = '90vw';
+      win.style.left = '5vw';
+    // 更新标志，因为left样式被修改了
+    win.dataset.hasInlineLeft = 'true';
   }
 }
 
@@ -1518,18 +1639,18 @@ function openTrashWindow(){
   var win = createWindow({ title: 'Trash', contentHTML: html, width: 360, height: 240 });
   // 移动端：宽度设置为设备宽度的 90%，并水平居中
   if (window.innerWidth <= 768 && win){
-    var container = document.querySelector('.macos-theme') || document.body;
-    var mobileW = Math.round(container.clientWidth * 0.9);
-    win.style.width = mobileW + 'px';
-    win.style.minWidth = mobileW + 'px';
-    var left = Math.max(0, Math.round((container.clientWidth - mobileW) / 2));
-    win.style.left = left + 'px';
+    win.style.width = '90vw';
+      win.style.minWidth = '90vw';
+      win.style.left = '5vw';
+    // 更新标志，因为left样式被修改了
+    win.dataset.hasInlineLeft = 'true';
   }
 }
 
 document.addEventListener('DOMContentLoaded', function(){
   bindDockIcons();
   bindDesktopIcons();
+  bindMenuItems();
   initLanguageToggle();
   initStickyNoteDrag();
   initMenuClock();
@@ -1930,13 +2051,18 @@ if (pillPhoto) { pillPhoto.style.pointerEvents = 'none'; }
   }
 });
 
-})();
-
-
-
 // 透明模态框查看大图
 function openPhotoModal(url){
   if (!url) return;
+  
+  // 常量定义
+  const MODAL_Z_INDEX = 10000;
+  const FADE_DURATION = 160;
+  const IMAGE_MAX_SCALE = 3;
+  const DOUBLE_TAP_THRESHOLD = 250;
+  const WHEEL_SCALE_FACTOR = 0.92;
+  const CONTAINER_PADDING = 24;
+  
   var overlay = document.createElement('div');
   overlay.className = 'macos-photo-modal';
   overlay.style.position = 'fixed';
@@ -1948,55 +2074,59 @@ function openPhotoModal(url){
   overlay.style.display = 'flex';
   overlay.style.alignItems = 'center';
   overlay.style.justifyContent = 'center';
-  overlay.style.zIndex = '10000';
+  overlay.style.zIndex = MODAL_Z_INDEX;
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity .15s ease';
+  overlay.style.overflow = 'hidden'; // 防止阴影溢出导致滚动条
   var wrap = document.createElement('div');
   wrap.style.position = 'relative';
   wrap.style.maxWidth = '80vw';
-     wrap.style.maxHeight = '80vh';
+  wrap.style.maxHeight = '80vh';
+  wrap.style.padding = '0px'; // 移除内边距
+  wrap.style.boxShadow = 'none'; // 移除阴影
+  wrap.style.boxSizing = 'border-box'; // 内边距包含在尺寸内
      var img = document.createElement('img');
    img.src = url;
-   img.style.maxWidth = '100%';
-   img.style.maxHeight = '100%';
+   img.onload = function() { fitImage(); }; // 图片加载完成后计算尺寸
    img.style.display = 'block';
    img.style.borderRadius = '6px';
-   img.style.boxShadow = '0 6px 24px rgba(0,0,0,0.35)';
+   // 移除图片阴影，由容器统一承载
    img.style.objectFit = 'contain';
-   var btn = document.createElement('div');
-   btn.textContent = '×';
-   btn.style.position = 'absolute';
-   btn.style.top = '8px';
-   btn.style.right = '12px';
-   btn.style.color = '#fff';
-   btn.style.fontSize = '22px';
-   btn.style.lineHeight = '22px';
-   btn.style.cursor = 'pointer';
-   btn.style.padding = '2px 6px';
+    // 不再显示任何按钮，点击图片即可关闭
 
-   // 根据视口与图片原始尺寸动态适配，保证不超过80%并保持居中
-   function fitImage(){
-     var vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-     var vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-     var maxW = Math.floor(vw * 0.8);
-     var maxH = Math.floor(vh * 0.8);
+   // 根据视口与图片原始尺寸动态适配，初始显示不超过80%但允许放大超出
+   function fitImage(customWidth = null, customHeight = null){
+     // 使用clientWidth/clientHeight获取实际可用视口尺寸
+     var vw = customWidth !== null ? customWidth : wrap.clientWidth;
+     var vh = customHeight !== null ? customHeight : wrap.clientHeight;
+     // 使用保存的窗口尺寸直接计算，不应用额外缩放
+     var maxW = Math.floor(vw);
+     var maxH = Math.floor(vh);
      wrap.style.maxWidth = maxW + 'px';
      wrap.style.maxHeight = maxH + 'px';
+     wrap.style.boxSizing = 'border-box';
+       // 允许图片超出容器边界
      var nw = img.naturalWidth || maxW;
      var nh = img.naturalHeight || maxH;
+     // 不再扣除容器内边距
+     var contentWidth = maxW;
+     var contentHeight = maxH;
      var ratio = nw / nh;
-     var boxRatio = maxW / maxH;
-     if (ratio > boxRatio){
-       img.style.width = maxW + 'px';
-       img.style.height = 'auto';
-     } else {
-       img.style.height = maxH + 'px';
-       img.style.width = 'auto';
+     var boxRatio = contentWidth / contentHeight;
+     
+     // 初始显示时适配容器，但放大时允许超出
+     if (scale === 1) {
+       if (ratio > boxRatio){
+         img.style.width = contentWidth + 'px';
+         img.style.height = 'auto';
+       } else {
+         img.style.height = contentHeight + 'px';
+         img.style.width = 'auto';
+       }
      }
    }
 
    wrap.appendChild(img);
-   wrap.appendChild(btn);
    overlay.appendChild(wrap);
    document.body.appendChild(overlay);
    requestAnimationFrame(function(){ overlay.style.opacity = '1'; });
@@ -2008,26 +2138,38 @@ function openPhotoModal(url){
    wrap.style.touchAction = 'none';
    img.style.userSelect = 'none';
    img.style.willChange = 'transform';
-   var scale = 1, minScale = 1, maxScale = 3;
+   var scale = 1, minScale = 1, maxScale = IMAGE_MAX_SCALE;
    var startDist = 0, startScale = 1;
    var tx = 0, ty = 0;
    var isPanning = false, lastX = 0, lastY = 0;
    var baseW = 0, baseH = 0;
-   function resetBase(){ var r = img.getBoundingClientRect(); baseW = r.width; baseH = r.height; }
-   function clampPan(){
-     var maxX = (baseW * (scale - 1)) / 2;
-     var maxY = (baseH * (scale - 1)) / 2;
-     if (!isFinite(maxX) || maxX < 0) maxX = 0;
-     if (!isFinite(maxY) || maxY < 0) maxY = 0;
-     tx = Math.max(-maxX, Math.min(tx, maxX));
-     ty = Math.max(-maxY, Math.min(ty, maxY));
+   
+   function resetBase(){ 
+     var r = img.getBoundingClientRect(); 
+     baseW = r.width; 
+     baseH = r.height; 
    }
-   function applyTransform(){ img.style.transform = 'translate(' + Math.round(tx) + 'px,' + Math.round(ty) + 'px) scale(' + scale + ')'; }
+   
+   function clampPan(){
+     // 移除拖拽限制，允许图片超出容器边界
+   }
+   
+   function applyTransform(){ 
+     img.style.transform = 'translate(' + Math.round(tx) + 'px,' + Math.round(ty) + 'px) scale(' + scale + ')'; 
+   }
+   
    // 初始化基准尺寸
    resetBase();
 
-   function dist2(a, b){ var dx = a.clientX - b.clientX; var dy = a.clientY - b.clientY; return Math.sqrt(dx*dx + dy*dy); }
-   function midpoint(a,b){ return { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 }; }
+   function dist2(a, b){ 
+     var dx = a.clientX - b.clientX; 
+     var dy = a.clientY - b.clientY; 
+     return Math.sqrt(dx*dx + dy*dy); 
+   }
+   
+   function midpoint(a,b){ 
+     return { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 }; 
+   }
 
    wrap.addEventListener('touchstart', function(e){
      if (e.touches.length === 2){
@@ -2050,7 +2192,15 @@ function openPhotoModal(url){
        e.preventDefault();
        var a = e.touches[0], b = e.touches[1];
        var d = dist2(a,b);
+       var prevScale = scale;
        scale = Math.min(maxScale, Math.max(minScale, startScale * (d / (startDist || d))));
+       
+       // 当从原始大小放大时，移除尺寸限制
+       if (prevScale === 1 && scale > 1) {
+         img.style.maxWidth = 'none';
+         img.style.maxHeight = 'none';
+       }
+       
        clampPan();
        applyTransform();
      } else if (e.touches.length === 1 && isPanning){
@@ -2073,10 +2223,15 @@ function openPhotoModal(url){
    wrap.addEventListener('touchend', function(e){
      if (!e.changedTouches || e.changedTouches.length !== 1) return;
      var now = Date.now();
-     if (now - lastTap < 250){
+     if (now - lastTap < DOUBLE_TAP_THRESHOLD){
        e.preventDefault();
        if (scale > 1){
-         scale = 1; tx = 0; ty = 0; img.style.transformOrigin = '50% 50%';
+         scale = 1; 
+         tx = 0; 
+         ty = 0; 
+         img.style.transformOrigin = '50% 50%';
+         // 恢复原始大小时重新适配容器
+         fitImage();
        } else {
          var rect = img.getBoundingClientRect();
          var t = e.changedTouches[0];
@@ -2084,6 +2239,9 @@ function openPhotoModal(url){
          var oy = ((t.clientY - rect.top) / rect.height) * 100;
          img.style.transformOrigin = ox + '% ' + oy + '%';
          scale = 2;
+         // 放大时移除尺寸限制，允许超出容器
+         img.style.maxWidth = 'none';
+         img.style.maxHeight = 'none';
        }
        clampPan();
        applyTransform();
@@ -2096,12 +2254,19 @@ function openPhotoModal(url){
    // 桌面滚轮缩放（便于开发预览）
    wrap.addEventListener('wheel', function(e){
      e.preventDefault();
-     var factor = (e.deltaY > 0) ? 0.92 : 1.08;
+     var factor = e.deltaY > 0 ? WHEEL_SCALE_FACTOR : (1 / WHEEL_SCALE_FACTOR);
      var newScale = Math.min(maxScale, Math.max(minScale, scale * factor));
      var rect = img.getBoundingClientRect();
      var ox = ((e.clientX - rect.left) / rect.width) * 100;
      var oy = ((e.clientY - rect.top) / rect.height) * 100;
      img.style.transformOrigin = ox + '% ' + oy + '%';
+     
+     // 当从原始大小放大时，移除尺寸限制
+     if (scale === 1 && newScale > 1) {
+       img.style.maxWidth = 'none';
+       img.style.maxHeight = 'none';
+     }
+     
      scale = newScale;
      clampPan();
      applyTransform();
@@ -2109,20 +2274,14 @@ function openPhotoModal(url){
 
    function close(){
      overlay.style.opacity = '0';
-     setTimeout(function(){ overlay.remove(); }, 160);
+     setTimeout(function(){ overlay.remove(); }, FADE_DURATION);
      document.removeEventListener('keydown', onKey);
      window.removeEventListener('resize', fitImage);
    }
-   overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
-   btn.addEventListener('click', close);
+   overlay.addEventListener('click', function(e){ if (e.target === overlay || e.target === img) close(); });
    function onKey(e){ if (e.key === 'Escape') close(); }
    document.addEventListener('keydown', onKey);
 }
 
 // 点击事件委托已移至 openPhotosWindow 内部，避免全局引用未定义变量。
-
-
-
-
-2 0 2 5 / 1 1 / 6   1 7 : 4 4 : 2 2  
- 
+})();
