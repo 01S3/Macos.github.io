@@ -2097,7 +2097,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    // 根据视口与图片原始尺寸动态适配，初始显示不超过80%但允许放大超出
    function fitImage(customWidth = null, customHeight = null){
      // 如果图片已经放大，不重新计算尺寸
-     if (typeof scale !== 'undefined' && scale > 1.01) return; // 使用小阈值避免微小缩放
+     if (typeof scale !== 'undefined' && scale > 1) return; // 与其他地方保持一致，使用1作为阈值
      
      // 使用clientWidth/clientHeight获取实际可用视口尺寸
      var vw = customWidth !== null ? customWidth : wrap.clientWidth;
@@ -2154,8 +2154,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    }
    
    function applyTransform(){ 
-     // 添加平滑过渡效果
-     img.style.transition = 'transform 0.1s ease-out';
+     // 不在这里设置过渡效果，由各个事件处理器自行控制
      img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; 
    }
    
@@ -2190,7 +2189,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    // 创建具名函数以便后续移除
    function handleResize() {
      // 只有在图片未放大时才重新适配窗口大小
-     if (scale <= 1.01) { // 使用小阈值避免微小缩放
+     if (scale <= 1) { // 与其他地方保持一致，使用1作为阈值
        fitImage();
      }
    }
@@ -2230,7 +2229,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    wrap.addEventListener('touchcancel', function(e){ 
      isPanning = false; 
      // 无论放大多少，都保存当前缩放状态
-     if (scale > 1.01) { // 使用小阈值避免微小缩放
+     if (scale > 1) { // 与其他地方保持一致，使用1作为阈值
        img.style.maxWidth = 'none';
        img.style.maxHeight = 'none';
      }
@@ -2271,7 +2270,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
        img.style.transformOrigin = ox + '% ' + oy + '%';
        
        // 当从原始大小放大时，移除尺寸限制
-       if (prevScale <= 1.01 && scale > 1.01) { // 使用统一的阈值判断
+       if (prevScale <= 1 && scale > 1) { // 使用统一的阈值判断
          img.style.maxWidth = 'none';
          img.style.maxHeight = 'none';
        }
@@ -2297,9 +2296,14 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
      if (e.touches.length <= 1){ // 当手指数量从2减少到1或0时
        // 如果只剩一个手指且图片已放大，启用拖拽
        if (e.touches.length === 1 && scale > 1) {
-         isPanning = true;
-         lastX = e.touches[0].clientX;
-         lastY = e.touches[0].clientY;
+         // 延迟启用拖拽，避免立即记录位置导致跳跃
+         setTimeout(function() {
+           if (e.touches.length === 1) { // 再次检查手指数量
+             isPanning = true;
+             lastX = e.touches[0].clientX;
+             lastY = e.touches[0].clientY;
+           }
+         }, 50); // 短暂延迟确保状态切换完成
        } else {
          isPanning = false;
        }
@@ -2308,7 +2312,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
        img.style.transition = 'transform 0.1s ease-out';
        
        // 无论放大多少，都保存当前缩放状态
-       if (scale > 1.01) { // 使用小阈值避免微小缩放
+       if (scale > 1) { // 与其他地方保持一致，使用1作为阈值
          img.style.maxWidth = 'none';
          img.style.maxHeight = 'none';
        }
@@ -2330,7 +2334,7 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
      img.style.transformOrigin = ox + '% ' + oy + '%';
      
      // 当从原始大小放大时，移除尺寸限制
-     if (scale <= 1.01 && newScale > 1.01) { // 使用统一的阈值判断
+     if (scale <= 1 && newScale > 1) { // 使用统一的阈值判断
        img.style.maxWidth = 'none';
        img.style.maxHeight = 'none';
      }
