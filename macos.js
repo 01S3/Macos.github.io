@@ -2,6 +2,53 @@
 (function(){
   console.log('[macos-theme] assets loaded');
 
+  // 视频背景控制
+  (function(){
+    function initVideoBackground() {
+      const video = document.getElementById('backgroundVideo');
+      if (!video) return;
+      
+      // 确保视频加载后自动播放
+      video.addEventListener('loadeddata', function() {
+        // 尝试播放视频
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log('[macos-theme] 视频自动播放失败:', error);
+            // 添加点击事件监听器，以便用户交互后播放
+            document.addEventListener('click', function playVideoOnClick() {
+              video.play().catch(e => console.log('[macos-theme] 视频播放失败:', e));
+              document.removeEventListener('click', playVideoOnClick);
+            }, { once: true });
+          });
+        }
+      });
+      
+      // 视频加载失败时的处理
+      video.addEventListener('error', function() {
+        console.log('[macos-theme] 视频加载失败，将回退到静态背景');
+        // 可以在这里添加回退逻辑
+      });
+      
+      // 窗口大小变化时调整视频大小
+      function adjustVideoSize() {
+        // 视频已经通过CSS设置为object-fit: cover，这里不需要额外调整
+        // 但可以添加其他响应式逻辑
+      }
+      
+      window.addEventListener('resize', adjustVideoSize);
+      adjustVideoSize();
+    }
+    
+    // DOM加载完成后初始化视频背景
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initVideoBackground);
+    } else {
+      initVideoBackground();
+    }
+  })();
+
   // 全局错误浮层
   (function(){
     var ERR_ID = 'macos-error-banner';
