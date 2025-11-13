@@ -3,41 +3,18 @@
 html, body { height: 100%; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Microsoft Yahei', sans-serif; background: var(--macos-bg); color: #222; margin: 0; }
 
-/* 视频背景样式 */
-.macos-theme .video-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  overflow: hidden;
+/* 网格背景样式 */
+.macos-theme {
+  height: 100vh; 
+  display: flex; 
+  flex-direction: column; 
+  background-color: transparent; 
+  background-image: 
+    linear-gradient(rgba(180, 180, 180, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 180, 180, 0.4) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
 }
-
-.macos-theme .video-background video {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100vw;
-  min-height: 100vh;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.macos-theme .video-background .video-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-}
-
-.macos-theme { height: 100vh; display: flex; flex-direction: column; background-color: transparent; background-image: none; }
 /* 恢复旧版 macos.html 的无衬线字体栈（作用域：macOS 主题） */
 .macos-theme, .macos-theme * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 
@@ -134,7 +111,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 
 /* 主要内容区域 */
 .macos-theme .main-content { flex: 1; display: flex; align-items: center; justify-content: center; padding-top: 22px; position: relative; }
-.macos-theme .welcome-text { font-size: 16px; color: #fff; text-shadow: 0 0 5px rgba(0, 0, 0, 0.7); background-color: rgba(0, 0, 0, 0.5); padding: 10px 20px; border-radius: 10px; backdrop-filter: blur(5px); }
+.macos-theme .welcome-text { font-size: 16px; color: #000; text-shadow: 0 0 5px rgba(255, 255, 255, 0.7); background-color: rgba(245, 245, 245, 0.4); backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 20px; border-radius: 10px; }
 /* 打字机光标样式 */
 .macos-theme .welcome-text .typing-cursor { display: inline-block; margin-left: 4px; font-weight: 400; opacity: 1; }
 
@@ -152,7 +129,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .macos-theme .icon { display: flex; flex-direction: column; align-items: center; width: 80px; cursor: pointer; transition: transform 0.2s ease; }
 .macos-theme .icon:hover { transform: scale(1.05); }
 .macos-theme .icon img { width: 50px; height: 50px; margin-bottom: 5px; }
-.macos-theme .icon-label { font-size: 12px; font-weight: 500; color: #fff; text-align: center; background-color: rgba(0, 0, 0, 0.7); padding: 2px 5px; border-radius: 3px; white-space: nowrap; backdrop-filter: blur(5px); }
+.macos-theme .icon-label { font-size: 12px; font-weight: 500; color: #000; text-align: center; background-color: rgba(245, 245, 245, 0.4); backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.2); padding: 2px 5px; border-radius: 3px; white-space: nowrap; }
 
 /* 便签样式 */
 .macos-theme .sticky-note {
