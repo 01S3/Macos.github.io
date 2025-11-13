@@ -2137,10 +2137,11 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    img.style.userSelect = 'none';
    img.style.willChange = 'transform';
    var scale = 1, minScale = MIN_SCALE, maxScale = IMAGE_MAX_SCALE;
-   var startDist = 0, startScale = 1;
    var tx = 0, ty = 0;
    var isPanning = false, lastX = 0, lastY = 0;
    var baseW = 0, baseH = 0;
+   var lastTapTime = 0; // 用于检测双击
+   var tapTimeout; // 用于延迟执行单击操作
    
    function resetBase(){ 
      var r = img.getBoundingClientRect(); 
@@ -2157,16 +2158,6 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
      // 添加平滑过渡效果
      img.style.transition = 'transform 0.1s ease-out';
      img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')'; 
-   }
-   
-   function dist2(a, b){ 
-     var dx = a.clientX - b.clientX; 
-     var dy = a.clientY - b.clientY; 
-     return Math.sqrt(dx*dx + dy*dy); 
-   }
-   
-   function midpoint(a,b){ 
-     return { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 }; 
    }
 
    // 图片加载完成后初始化基准尺寸
@@ -2197,38 +2188,103 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    
    window.addEventListener('resize', handleResize);
 
+   // 触摸事件处理
    wrap.addEventListener('touchstart', function(e){
-     if (e.touches.length === 2){
+     if (e.touches.length === 1) {
        e.preventDefault();
-       var a = e.touches[0], b = e.touches[1];
-       startDist = dist2(a,b);
-       startScale = scale;
-       var m = midpoint(a,b);
-       var rect = img.getBoundingClientRect();
-       // 防止除零错误
-       var rectWidth = rect.width || 1;
-       var rectHeight = rect.height || 1;
-       var ox = ((m.x - rect.left) / rectWidth) * 100;
-       var oy = ((m.y - rect.top) / rectHeight) * 100;
-       img.style.transformOrigin = ox + '% ' + oy + '%';
-       // 重置拖拽状态，防止从缩放切换到拖拽时出现跳跃
-       isPanning = false;
-     } else if (e.touches.length === 1) {
-       // 只有在图片已放大时才启用拖拽
-       if (scale > 1) {
-         isPanning = true; 
-         lastX = e.touches[0].clientX; 
-         lastY = e.touches[0].clientY;
-       } else {
-         // 图片未放大时，禁用拖拽
+       var currentTime = new Date().getTime();
+       var tapLength = currentTime - lastTapTime;
+       var isDoubleTap = tapLength < 300 && tapLength > 0;
+       
+       // 检测双击
+       if (isDoubleTap) {
+         // 双击处理
+         clearTimeout(tapTimeout);
+         
+         // 根据当前缩放状态决定放大倍数
+         if (scale <= 1.01) {
+           // 第一次双击放大到3倍
+           scale = 3;
+         } else if (scale <= 3.01) {
+           // 第二次双击放大到5倍
+           scale = 5;
+         } else {
+           // 已经放大到5倍或更大，恢复原始大小
+           scale = 1;
+           tx = 0;
+           ty = 0;
+         }
+         
+         // 设置缩放中心点为触摸点
+         var touch = e.touches[0];
+         var rect = img.getBoundingClientRect();
+         var rectWidth = rect.width || 1;
+         var rectHeight = rect.height || 1;
+         var ox = ((touch.clientX - rect.left) / rectWidth) * 100;
+         var oy = ((touch.clientY - rect.top) / rectHeight) * 100;
+         img.style.transformOrigin = ox + '% ' + oy + '%';
+         
+         // 应用变换
+         if (scale > 1.01) {
+           img.style.maxWidth = 'none';
+           img.style.maxHeight = 'none';
+         }
+         applyTransform();
+         
+         // 双击后不立即启用拖拽，需要用户再次触摸
          isPanning = false;
+       } else {
+         // 单击处理（延迟执行，以防是双击）
+         tapTimeout = setTimeout(function() {
+           // 单击关闭图片
+           close();
+         }, 300);
+         
+         // 如果图片已放大，启用拖拽
+         if (scale > 1.01) {
+           isPanning = true;
+           lastX = e.touches[0].clientX;
+           lastY = e.touches[0].clientY;
+         } else {
+           isPanning = false;
+         }
        }
+       
+       lastTapTime = currentTime;
+     }
+   }, { passive: false });
+   
+   // 触摸移动事件处理
+   wrap.addEventListener('touchmove', function(e){
+     if (e.touches.length === 1 && isPanning) {
+       e.preventDefault();
+       // 拖拽时移除过渡，确保跟手
+       img.style.transition = 'none';
+       
+       var x = e.touches[0].clientX, y = e.touches[0].clientY;
+       tx += (x - lastX); 
+       ty += (y - lastY);
+       lastX = x; 
+       lastY = y;
+       
+       clampPan();
+       applyTransform();
+     }
+   }, { passive: false });
+   
+   // 触摸结束事件处理
+   wrap.addEventListener('touchend', function(e){
+     if (e.touches.length === 0) {
+       isPanning = false;
+       // 恢复过渡效果
+       img.style.transition = 'transform 0.1s ease-out';
      }
    }, { passive: false });
    
    // 触摸取消事件处理
    wrap.addEventListener('touchcancel', function(e){ 
      isPanning = false; 
+     clearTimeout(tapTimeout); // 取消延迟执行的单击操作
      // 无论放大多少，都保存当前缩放状态
      if (scale > 1.01) { // 使用小阈值避免微小缩放
        img.style.maxWidth = 'none';
@@ -2237,84 +2293,6 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
      // 恢复过渡效果
      img.style.transition = 'transform 0.1s ease-out';
    });
-
-   wrap.addEventListener('touchmove', function(e){
-     if (e.touches.length === 2){
-       e.preventDefault();
-       // 如果之前是拖拽状态，需要重置状态
-       if (isPanning) {
-         isPanning = false;
-       }
-       
-       // 快速缩放时移除过渡，避免延迟
-       img.style.transition = 'none';
-       
-       var a = e.touches[0], b = e.touches[1];
-       var d = dist2(a,b);
-       var prevScale = scale;
-       // 优化缩放计算，提高跟手感
-       // 修正缩放比例，使双指向外放大，向内缩小（符合用户直觉）
-       var scaleRatio = startDist > 0 ? d / startDist : 1;
-       var targetScale = startScale * scaleRatio;
-       // 平滑过渡到目标缩放值，避免突变
-       scale = scale + (targetScale - scale) * 0.8;
-       scale = Math.min(maxScale, Math.max(minScale, scale));
-       
-       // 动态更新缩放原点，使缩放更加流畅
-       var m = midpoint(a,b);
-       var rect = img.getBoundingClientRect();
-       // 防止除零错误
-       var rectWidth = rect.width || 1;
-       var rectHeight = rect.height || 1;
-       var ox = ((m.x - rect.left) / rectWidth) * 100;
-       var oy = ((m.y - rect.top) / rectHeight) * 100;
-       img.style.transformOrigin = ox + '% ' + oy + '%';
-       
-       // 当从原始大小放大时，移除尺寸限制
-       if (prevScale <= 1.01 && scale > 1.01) { // 使用统一的阈值判断
-         img.style.maxWidth = 'none';
-         img.style.maxHeight = 'none';
-       }
-       
-       clampPan();
-       applyTransform();
-     } else if (e.touches.length === 1 && isPanning){
-       e.preventDefault();
-       // 拖拽时也移除过渡，确保跟手
-       img.style.transition = 'none';
-       
-       var x = e.touches[0].clientX, y = e.touches[0].clientY;
-       tx += (x - lastX); ty += (y - lastY);
-       lastX = x; lastY = y;
-       clampPan();
-       applyTransform();
-     }
-   }, { passive: false });
-
-   // 合并touchend事件处理，确保缩放状态正确保存
-   wrap.addEventListener('touchend', function(e){
-     // 处理双指缩放结束
-     if (e.touches.length <= 1){ // 当手指数量从2减少到1或0时
-       // 如果只剩一个手指且图片已放大，启用拖拽
-       if (e.touches.length === 1 && scale > 1) {
-         isPanning = true;
-         lastX = e.touches[0].clientX;
-         lastY = e.touches[0].clientY;
-       } else {
-         isPanning = false;
-       }
-       
-       // 恢复过渡效果
-       img.style.transition = 'transform 0.1s ease-out';
-       
-       // 无论放大多少，都保存当前缩放状态
-       if (scale > 1.01) { // 使用小阈值避免微小缩放
-         img.style.maxWidth = 'none';
-         img.style.maxHeight = 'none';
-       }
-     }
-     // 已移除双击放大缩小功能
-   }, { passive: false });
 
    // 桌面滚轮缩放（便于开发预览）
    wrap.addEventListener('wheel', function(e){
@@ -2349,7 +2327,10 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
    
    window.addEventListener('beforeunload', beforeUnloadHandler);
    
-   overlay.addEventListener('click', function(e){ if (e.target === overlay || e.target === img) close(); });
+   overlay.addEventListener('click', function(e){ 
+     // 只有点击背景（overlay）时才关闭，点击图片不会关闭
+     if (e.target === overlay) close(); 
+   });
    function onKey(e){ if (e.key === 'Escape') close(); }
    document.addEventListener('keydown', onKey);
 
