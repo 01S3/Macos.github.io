@@ -1933,13 +1933,27 @@ function triggerBlackCatEgg() {
   var optionsContainer = document.createElement('div');
   optionsContainer.style.cssText = `
     display: flex;
-    flex-direction: column;
     gap: 15px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    margin: 0 auto;
+    margin: 20px auto 0;
+    flex-direction: column;
   `;
+  
+  // 添加响应式样式
+  var responsiveStyle = document.createElement('style');
+  responsiveStyle.textContent = `
+    @media (min-width: 769px) {
+      .blackcat-options-container {
+        flex-direction: row !important;
+      }
+    }
+  `;
+  document.head.appendChild(responsiveStyle);
+  
+  // 为选项容器添加类名，以便媒体查询可以应用
+  optionsContainer.className = 'blackcat-options-container';
   
   // 选项A
   var optionA = document.createElement('div');
@@ -1959,6 +1973,7 @@ function triggerBlackCatEgg() {
     line-height: 1.4;
     font-size: 14px;
     width: 100%;
+    flex: 1;
   `;
   optionA.innerHTML = 'A：╮(╯▽╰)╭ 、(๑・̀ㅂ・́)و✧（表面惊讶实则无视）~';
   optionA.addEventListener('click', function() {
@@ -1985,6 +2000,7 @@ function triggerBlackCatEgg() {
     font-size: 14px;
     width: 100%;
     cursor: pointer;
+    flex: 1;
   `;
   
   // 创建选项B的文本内容
