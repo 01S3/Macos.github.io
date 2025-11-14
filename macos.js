@@ -1573,6 +1573,680 @@ function initTypewriterWelcome(){
   }, 500);
 }
 
+// 初始化Lottie动画
+function initLottieAnimation(){
+  var container = document.getElementById('lottie-animation');
+  if (!container) return;
+  
+  // 桌面宠物动画列表
+  var desktopPets = [
+    {
+      name: '打工人',
+      url: 'https://lottie.host/embed/d3fb4330-4bd0-4b48-9ab3-07f828463702/jU52pCdgWX.lottie',
+      messages: [
+        '嘿宝宝~热茶还是冰美式？',
+        '今天也要加油哦！',
+        '摸鱼时间到~',
+        '周末什么时候到？',
+        '今天的工作完成了吗？',
+        '来杯咖啡提提神吧！'
+      ]
+    },
+    {
+      name: '儿时回忆',
+      url: 'https://lottie.host/embed/e451085c-b766-4871-96ba-6d5008cd54dc/8Fdc3XjvHm.lottie',
+      messages: [
+        '你是不是想玩金山打字王？但是你不再是你了Ono~',
+        '看起来你在写信，需要帮助吗？',
+        '要不要用信件模板？',
+        '需要我帮你检查拼写吗？',
+        '我看到你正在创建一个新文档！',
+        '请问要我帮你写遗书吗？',
+        '你好像在挖坟，这是企业的坟还是个人的坟？'
+      ]
+    },
+    {
+      name: '蓝猫',
+      url: 'https://lottie.host/embed/743f3bd8-ebcb-4daf-84e6-e281282f9f4d/duqfXZ7qYb.lottie',
+      messages: [
+        '喵~今天天气真好！',
+        '我想晒太阳~',
+        '有小鱼干吗？',
+        '摸摸我的头吧~',
+        '喵喵喵~',
+        '我想睡觉了...'
+      ]
+    },
+    {
+      name: '黑猫',
+      url: 'https://lottie.host/embed/d157d9b1-ba1c-4a07-ae8e-7b433a44b152/smKpRdLSHo.lottie',
+      messages: [
+        '黑夜是我的主场~',
+        '神秘的黑猫来了！',
+        '你知道吗？黑猫很幸运的！',
+        '月亮出来了，该活动了~',
+        '我在守护这个夜晚...',
+        '嘘...别出声！'
+      ]
+    },
+    {
+      name: '奔跑吧少年',
+      url: 'https://lottie.host/embed/aa53d6f5-2a8f-4e43-88c7-afd9e4e74d2d/2e7EGdssIr.lottie',
+      messages: [
+        '一起跑步吧！',
+        '生命在于运动~',
+        '今天你运动了吗？',
+        '奔跑的感觉真好！',
+        '超越自己！',
+        '坚持就是胜利！'
+      ]
+    }
+  ];
+  
+  // 随机选择一个宠物
+  var selectedPet = desktopPets[Math.floor(Math.random() * desktopPets.length)];
+  console.log('当前宠物：', selectedPet.name); // 添加调试日志
+  
+  // 创建iframe元素来嵌入Lottie动画
+  var iframe = document.createElement('iframe');
+  iframe.src = selectedPet.url;
+  iframe.style.width = '150px'; // 减小尺寸以适应右下角位置
+  iframe.style.height = '150px'; // 减小尺寸以适应右下角位置
+  iframe.style.border = 'none';
+  iframe.style.borderRadius = '12px';
+  iframe.title = selectedPet.name; // 添加标题，便于识别
+  iframe.style.pointerEvents = 'none'; // 禁用iframe的鼠标事件，让点击事件穿透到容器
+  
+  // 将iframe添加到容器中
+  container.appendChild(iframe);
+  
+  // 自动切换气泡的变量
+  var autoBubbleTimer = null;
+  var isUserInteracted = false;
+  
+  // 黑猫彩蛋相关变量
+  var blackCatMessagesShown = [];
+  var blackCatEggTriggered = false;
+  
+  // 自动切换气泡的函数
+  function startAutoBubbleCycle() {
+    // 如果用户已经交互过，则不启动自动切换
+    if (isUserInteracted) return;
+    
+    // 先等待8秒（不显示气泡）
+    autoBubbleTimer = setTimeout(function() {
+      // 如果用户已经交互过，则不显示气泡
+      if (isUserInteracted) return;
+      
+      var message;
+      
+      // 如果是黑猫且彩蛋已触发，显示特殊消息
+      if (selectedPet.name === '黑猫' && blackCatEggTriggered) {
+        var specialMessages = [
+          "喵~ 想和我聊天吗？点击我试试看~",
+          "喵~ 我在这里陪着你呢~",
+          "喵~ 今天天气真好，适合晒太阳~"
+        ];
+        message = specialMessages[Math.floor(Math.random() * specialMessages.length)];
+      } else {
+        // 随机选择一条消息
+        var randomMessageIndex = Math.floor(Math.random() * selectedPet.messages.length);
+        message = selectedPet.messages[randomMessageIndex];
+      }
+      
+      // 显示气泡
+      showPetMessage(container, message);
+      
+      // 7秒后隐藏气泡
+      setTimeout(function() {
+        var existingBubble = container.querySelector('.pet-message-bubble');
+        if (existingBubble) {
+          existingBubble.remove();
+        }
+        
+        // 重新开始下一个15秒周期
+        startAutoBubbleCycle();
+      }, 7000);
+    }, 8000);
+  }
+  
+  // 启动自动切换气泡
+  startAutoBubbleCycle();
+  
+  // 添加点击计数器
+  var clickCount = 0;
+  var clickTimer = null;
+  
+  // 为容器添加点击事件
+  container.addEventListener('click', function() {
+    clickCount++;
+    
+    // 如果是第一次点击，设置一个定时器来重置计数器
+    if (clickCount === 1) {
+      clickTimer = setTimeout(function() {
+        // 单击事件：显示宠物消息
+        console.log('宠物被单击了');
+        
+        // 标记用户已经交互过
+        isUserInteracted = true;
+        
+        // 清除自动切换定时器
+        if (autoBubbleTimer) {
+          clearTimeout(autoBubbleTimer);
+        }
+        
+        // 移除已存在的气泡
+        var existingBubble = container.querySelector('.pet-message-bubble');
+        if (existingBubble) {
+          existingBubble.remove();
+        }
+        
+        // 如果当前宠物有交互语句，则显示气泡
+        if (selectedPet.messages && selectedPet.messages.length > 0) {
+          // 如果是黑猫，需要记录已显示的消息
+          if (selectedPet.name === '黑猫' && !blackCatEggTriggered) {
+            // 找出还未显示过的消息
+            var availableMessages = selectedPet.messages.filter(function(msg) {
+              return blackCatMessagesShown.indexOf(msg) === -1;
+            });
+            
+            // 如果所有消息都已显示过，重置数组
+            if (availableMessages.length === 0) {
+              availableMessages = selectedPet.messages;
+              blackCatMessagesShown = [];
+            }
+            
+            // 随机选择一条可用消息
+            var message = availableMessages[Math.floor(Math.random() * availableMessages.length)];
+            
+            // 记录已显示的消息
+            blackCatMessagesShown.push(message);
+            
+            // 检查是否所有消息都已显示过
+            if (blackCatMessagesShown.length === selectedPet.messages.length) {
+              // 触发彩蛋
+              triggerBlackCatEgg();
+            }
+          } else if (selectedPet.name === '黑猫' && blackCatEggTriggered) {
+            // 如果黑猫彩蛋已触发，显示特殊消息
+            var specialMessages = [
+              "喵~ 你已经知道我的秘密了，但我们还是好朋友吧？",
+              "喵~ 谢谢你之前给我的小鱼干，我很开心！",
+              "喵~ 想再看看我的秘密吗？那得再请我吃小鱼干了~"
+            ];
+            var message = specialMessages[Math.floor(Math.random() * specialMessages.length)];
+          } else {
+            // 其他宠物，随机选择一条消息
+            var randomMessageIndex = Math.floor(Math.random() * selectedPet.messages.length);
+            var message = selectedPet.messages[randomMessageIndex];
+          }
+          
+          // 显示新气泡
+          showPetMessage(container, message);
+        }
+        
+        // 重置点击计数器
+        clickCount = 0;
+      }, 300); // 300毫秒内检测双击
+    } else if (clickCount === 2) {
+      // 双击事件：切换宠物
+      console.log('宠物被双击了，切换宠物');
+      
+      // 清除单击定时器
+      clearTimeout(clickTimer);
+      
+      // 获取当前宠物的索引
+      var currentIndex = desktopPets.findIndex(pet => pet.name === selectedPet.name);
+      
+      // 计算下一个宠物的索引（循环）
+      var nextIndex = (currentIndex + 1) % desktopPets.length;
+      
+      // 更新选中的宠物
+      selectedPet = desktopPets[nextIndex];
+      console.log('切换到宠物：', selectedPet.name);
+      
+      // 更新iframe的src
+      var iframe = container.querySelector('iframe');
+      if (iframe) {
+        iframe.src = selectedPet.url;
+        iframe.title = selectedPet.name;
+      }
+      
+      // 显示切换提示
+      showPetMessage(container, `你好，我是你的新私人助理！`);
+      
+      // 重置用户交互状态，但不立即启动自动切换，等待切换提示消失后再启动
+      isUserInteracted = false;
+      
+      // 延迟5秒后启动自动切换（等待切换提示消失）
+      setTimeout(function() {
+        startAutoBubbleCycle();
+      }, 5000);
+      
+      // 重置点击计数器
+      clickCount = 0;
+    }
+  });
+}
+
+// 显示宠物交互语句的气泡
+function showPetMessage(container, message) {
+  // 移除已存在的气泡（如果有的话）
+  var existingBubble = container.querySelector('.pet-message-bubble');
+  if (existingBubble) {
+    existingBubble.parentNode.removeChild(existingBubble);
+  }
+  
+  // 创建气泡元素
+  var bubble = document.createElement('div');
+  bubble.className = 'pet-message-bubble';
+  bubble.textContent = message;
+  
+  // 将气泡添加到容器中
+  container.appendChild(bubble);
+  
+  // 5秒后自动隐藏气泡
+  setTimeout(function() {
+    if (bubble.parentNode) {
+      bubble.parentNode.removeChild(bubble);
+    }
+  }, 5000);
+}
+
+// 黑猫彩蛋触发函数
+function triggerBlackCatEgg() {
+  // 标记彩蛋已触发
+  blackCatEggTriggered = true;
+  
+  // 获取页面主体
+  var body = document.body;
+  var macosTheme = document.querySelector('.macos-theme');
+  
+  // 创建黑色背景和白色网格效果
+  var easterEgg = document.createElement('div');
+  easterEgg.className = 'black-cat-easter-egg';
+  easterEgg.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    z-index: 9999;
+    pointer-events: none;
+    animation: fadeIn 1s ease-in-out;
+  `;
+  
+  // 添加淡入动画
+  var style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // 添加到页面
+  body.appendChild(easterEgg);
+  
+  // 创建交互对话框容器
+  var dialogContainer = document.createElement('div');
+  dialogContainer.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    z-index: 10000;
+    max-width: 95vw;
+    width: auto;
+    min-width: 280px;
+    animation: pulse 2s infinite;
+    box-sizing: border-box;
+  `;
+  
+  // 添加消息文本
+  var message = document.createElement('div');
+  message.style.cssText = `
+    font-size: 16px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+  `;
+  message.textContent = '喵~ 你发现了本喵的秘密！接下来要怎么做呢？';
+  dialogContainer.appendChild(message);
+  
+  // 创建选项容器
+  var optionsContainer = document.createElement('div');
+  optionsContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+  `;
+  
+  // 选项A
+  var optionA = document.createElement('div');
+  optionA.style.cssText = `
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    padding: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    text-align: left;
+    min-height: auto;
+    display: block;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    font-size: 14px;
+    width: 100%;
+  `;
+  optionA.innerHTML = 'A：╮(╯▽╰)╭ 、(๑・̀ㅂ・́)و✧（表面惊讶实则无视）~';
+  optionA.addEventListener('click', function() {
+    // 选择A：保持在黑色页面
+    dialogContainer.remove();
+    showStuckMessage();
+  });
+  
+  // 选项B容器
+  var optionBContainer = document.createElement('div');
+  optionBContainer.style.cssText = `
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    padding: 15px;
+    transition: background-color 0.3s;
+    text-align: left;
+    min-height: auto;
+    display: block;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    font-size: 14px;
+    width: 100%;
+    cursor: pointer;
+  `;
+  
+  // 创建选项B的文本内容
+  var optionBContent = document.createElement('div');
+  optionBContent.style.cssText = `
+    margin-bottom: 10px;
+  `;
+  optionBContent.textContent = 'B： ( ๑ • ́ • ́ ) 猫爷！我愿意支付';
+  optionBContainer.appendChild(optionBContent);
+  
+  // 创建输入框容器
+  var inputContainer = document.createElement('div');
+  inputContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  `;
+  
+  // 创建自定义数字输入控件
+  var numberInputContainer = document.createElement('div');
+  numberInputContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  `;
+  
+  // 减少按钮
+  var decreaseBtn = document.createElement('button');
+  decreaseBtn.innerHTML = '−';
+  decreaseBtn.style.cssText = `
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+  `;
+  
+  // 输入框
+  var fishInput = document.createElement('input');
+  fishInput.type = 'number';
+  fishInput.min = '1';
+  fishInput.placeholder = '输入';
+  fishInput.style.cssText = `
+    width: 50px;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 4px 2px;
+    text-align: center;
+    font-size: 14px;
+    outline: none;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
+  `;
+  
+  // 隐藏Chrome/Safari/Edge中的上下箭头
+  var style = document.createElement('style');
+  style.textContent = `
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // 增加按钮
+  var increaseBtn = document.createElement('button');
+  increaseBtn.innerHTML = '+';
+  increaseBtn.style.cssText = `
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+  `;
+  
+  // 添加按钮交互效果
+  decreaseBtn.addEventListener('mouseenter', function() {
+    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    this.style.color = 'white';
+  });
+  
+  decreaseBtn.addEventListener('mouseleave', function() {
+    this.style.backgroundColor = 'transparent';
+    this.style.color = 'rgba(255, 255, 255, 0.7)';
+  });
+  
+  increaseBtn.addEventListener('mouseenter', function() {
+    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    this.style.color = 'white';
+  });
+  
+  increaseBtn.addEventListener('mouseleave', function() {
+    this.style.backgroundColor = 'transparent';
+    this.style.color = 'rgba(255, 255, 255, 0.7)';
+  });
+  
+  // 添加按钮点击事件
+  decreaseBtn.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
+    var currentValue = parseInt(fishInput.value) || 1;
+    if (currentValue > 1) {
+      fishInput.value = currentValue - 1;
+    }
+  });
+  
+  increaseBtn.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
+    var currentValue = parseInt(fishInput.value) || 1;
+    fishInput.value = currentValue + 1;
+  });
+  
+  // 阻止输入框点击事件冒泡
+  fishInput.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
+  });
+  
+  // 组装自定义输入控件
+  numberInputContainer.appendChild(decreaseBtn);
+  numberInputContainer.appendChild(fishInput);
+  numberInputContainer.appendChild(increaseBtn);
+  
+  inputContainer.appendChild(numberInputContainer);
+  
+  var fishText = document.createElement('span');
+  fishText.textContent = '条鱼孝敬您~';
+  fishText.style.flexShrink = '0';
+  inputContainer.appendChild(fishText);
+  
+  optionBContainer.appendChild(inputContainer);
+  
+  // 添加选项B的点击事件
+  optionBContainer.addEventListener('click', function() {
+    var fishCount = parseInt(fishInput.value) || 0;
+    if (fishCount < 1000) {
+      // 小于1000，保持在黑色页面
+      dialogContainer.remove();
+      showStuckMessage();
+    } else {
+      // 大于等于1000，关闭黑色页面并数鱼
+      dialogContainer.remove();
+      setTimeout(function() {
+        easterEgg.remove();
+        countFish(fishCount);
+      }, 500);
+    }
+  });
+  
+  // 保留回车键监听，用于桌面端
+  fishInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.stopPropagation(); // 阻止事件冒泡
+      var fishCount = parseInt(fishInput.value) || 0;
+      if (fishCount < 1000) {
+        // 小于1000，保持在黑色页面
+        dialogContainer.remove();
+        showStuckMessage();
+      } else {
+        // 大于等于1000，关闭黑色页面并数鱼
+        dialogContainer.remove();
+        setTimeout(function() {
+          easterEgg.remove();
+          countFish(fishCount);
+        }, 500);
+      }
+    }
+  });
+  
+  optionsContainer.appendChild(optionA);
+  optionsContainer.appendChild(optionBContainer);
+  dialogContainer.appendChild(optionsContainer);
+  
+  // 添加脉冲动画
+  var pulseStyle = document.createElement('style');
+  pulseStyle.textContent = `
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(pulseStyle);
+  
+  body.appendChild(dialogContainer);
+  
+  console.log('黑猫彩蛋已触发！');
+}
+
+// 显示卡在黑色页面的消息
+function showStuckMessage() {
+  var body = document.body;
+  
+  var stuckMessage = document.createElement('div');
+  stuckMessage.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    z-index: 10000;
+  `;
+  stuckMessage.textContent = '喵喵喵你个喵喵，喵了个喵的~ 喵~';
+  
+  body.appendChild(stuckMessage);
+}
+
+// 数鱼功能
+function countFish(fishCount) {
+  var container = document.querySelector('.lottie-animation-container');
+  if (!container) return;
+  
+  var currentFish = 1;
+  var fishInterval = setInterval(function() {
+    if (currentFish > fishCount) {
+      clearInterval(fishInterval);
+      return;
+    }
+    
+    // 移除之前所有的气泡
+    var existingBubbles = container.querySelectorAll('.pet-bubble');
+    existingBubbles.forEach(function(bubble) {
+      if (bubble.parentNode) {
+        bubble.parentNode.removeChild(bubble);
+      }
+    });
+    
+    // 显示当前鱼的气泡
+    showPetMessage(container, currentFish + '条鱼！喵！');
+    
+    currentFish++;
+  }, 1000); // 每秒显示一个
+}
+
 // 移动端汉堡菜单交互（需在 IIFE 内，便于调用内部窗口函数）
 function initMobileMenu(){
   var btn = document.getElementById('mobileHamburger');
@@ -1655,6 +2329,7 @@ document.addEventListener('DOMContentLoaded', function(){
   initStickyNoteDrag();
   initMenuClock();
   initTypewriterWelcome();
+  initLottieAnimation();
   initMobileMenu();
 
   // Dynamic Island 演示：顶栏药丸向下与左右放大 6 倍，2s 后复原
