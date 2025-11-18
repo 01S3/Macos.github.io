@@ -145,7 +145,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .pet-message-bubble {
   position: absolute;
   bottom: 130px;
-  right: 10px;
+  right: 30px;
   background-color: #ffffff;
   border-radius: 20px;
   padding: 15px 20px;
@@ -508,6 +508,175 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 /* 去重：hover 规则已在上方定义一次，避免重复定义影响维护 */
 .macos-theme .menu-right .hamburger svg { width: 18px; height: 18px; }
 .macos-theme .menu-right .hamburger circle { stroke: #333; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+
+/* 奔跑吧少年比赛进度条样式 */
+.race-progress-container {
+  position: fixed;
+  left: 50%;
+  bottom: 120px;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: visible;
+  z-index: 1000;
+  display: none;
+}
+
+/* 奔跑吧少年比赛进度条加载动画样式 */
+.loader { 
+   width: 0; 
+   height: 4px; 
+   display: block; 
+   position: absolute; 
+   top: 3px;
+   right: 0;
+   background: #FFF; 
+   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); 
+   box-sizing: border-box; 
+   transition: width 0.3s ease-out;
+ } 
+   .loader::after, 
+   .loader::before { 
+     content: ''; 
+     width: 10px; 
+     height: 2px; 
+     background: #FFF; 
+     position: absolute; 
+     top: 6px; 
+     left: -2px; 
+     opacity: 1; 
+     transform: rotate(-45deg) translateX(0px); 
+     box-sizing: border-box; 
+     animation: coli1 0.3s linear infinite;
+     display: none;
+   } 
+   .loader::before { 
+     top: -2px; 
+     transform: rotate(45deg); 
+     animation: coli2 0.3s linear infinite; 
+   } 
+   .loader.active::after,
+   .loader.active::before {
+     display: block;
+   }
+ 
+ @keyframes animFw { 
+     0% { 
+   width: 0; 
+ } 
+     100% { 
+   width: 100%; 
+ } 
+   } 
+ 
+ @keyframes coli1 { 
+     0% { 
+   transform: rotate(-45deg) translateX(0px); 
+   opacity: 1; 
+ } 
+     100% { 
+   transform: rotate(-45deg) translateX(45px); 
+   opacity: 0.7; 
+ } 
+   } 
+ 
+ @keyframes coli2 { 
+     0% { 
+   transform: rotate(45deg) translateX(0px); 
+   opacity: 1; 
+ } 
+     100% { 
+   transform: rotate(45deg) translateX(45px); 
+   opacity: 0.7; 
+ } 
+   }
+
+.race-countdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
+  font-weight: bold;
+  color: #ff6b6b;
+  text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+  z-index: 1001;
+  display: none;
+  animation: countdownPulse 1s ease-in-out;
+}
+
+@keyframes countdownPulse {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
+
+.race-milestone {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(46, 204, 113, 0.9);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: bold;
+  z-index: 1002;
+  display: none;
+  animation: milestonePopup 2s ease-in-out;
+}
+
+@keyframes milestonePopup {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  30% { transform: translate(-50%, -50%) scale(0.9); }
+  40% { transform: translate(-50%, -50%) scale(1); }
+  90% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.race-complete {
+  position: fixed;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(52, 152, 219, 0.95);
+  color: white;
+  padding: 20px 30px;
+  border-radius: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  z-index: 1003;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: completePopup 0.5s ease-out;
+}
+
+@keyframes completePopup {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.race-restart-btn {
+  margin-top: 15px;
+  padding: 8px 20px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.race-restart-btn:hover {
+  background-color: #27ae60;
+  transform: scale(1.05);
+}
 @keyframes diExpand {
   0% { top: 50%; transform: translate(-50%, -50%) scale(var(--pill-scale)); }
   45% { top: calc(100% + 8px); transform: translate(-50%, 0) scale(var(--pill-scale)); }
@@ -558,19 +727,36 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
                      width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
                      height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
                      transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+          background: linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 1) 0%,
+            rgb(220, 220, 220) 40%,
+            rgb(170, 170, 170) 98%,
+            rgb(10, 10, 10) 100%
+          );
       }
   /* 扩大态：允许药丸与圆环响应悬停（用于暂停计时）*/
   .macos-theme .menu-bar.expanded .pill-content,
   .macos-theme .menu-bar.expanded .pill-timer { pointer-events: auto; }
+  
+  /* 缩小态：减小圆环直径，保持圆心不变 */
+  .macos-theme .menu-bar:not(.expanded) .pill-timer {
+    width: calc(10px * var(--pill-scale));
+    height: calc(10px * var(--pill-scale));
+  }
   .macos-theme .pill-timer::before {
     content: '';
-    position: absolute; inset: 0; /* 动态粗细：随 scale 等比例放大，并可在扩展态稍微变细 */
-    border-radius: 50%;
-    background: conic-gradient(#2ecc71 var(--progress), transparent 0);
-    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - calc(var(--ring-base) * var(--pill-scale) * var(--ring-slim))), #000 0);
-    mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-base) * var(--pill-scale) * var(--ring-slim))), #000 0);
-    animation: pillTimer 6s linear infinite;
-    shape-rendering: geometricPrecision; /* 添加抗锯齿优化 */
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 100%;
+    border-bottom: 0 solid #ffffff05;
+    box-shadow: 0 -10px 20px 20px #ffffff40 inset, 
+      0 -5px 15px 10px #ffffff50 inset, 0 -2px 5px #ffffff80 inset, 
+      0 -3px 2px #ffffffbb inset, 0 2px 0px #ffffff, 0 2px 3px #ffffff, 
+      0 5px 5px #ffffff90, 0 10px 15px #ffffff60, 0 10px 20px 20px #ffffff40;
+    filter: blur(3px);
+    animation: pillTimer 2s linear infinite;
   }
   /* 悬停暂停计时与圆环动画 */
   .macos-theme .menu-bar.paused .pill-timer::before { animation-play-state: paused; }
@@ -715,8 +901,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 }
 
  @keyframes pillTimer {
-    from { --progress: 0deg; }
-    to { --progress: 360deg; }
+    100% { transform: rotate(360deg); }
   }
   /* 计时环随药丸一起移动（同位移曲线） */
   @keyframes diFollow {

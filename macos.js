@@ -1573,6 +1573,51 @@ function initTypewriterWelcome(){
   }, 500);
 }
 
+// 自动切换气泡的函数（全局函数）
+window.startAutoBubbleCycle = function() {
+  // 如果用户已经交互过，则不启动自动切换
+  if (window.isUserInteracted === true) return;
+  
+  // 先等待8秒（不显示气泡）
+  window.autoBubbleTimer = setTimeout(function() {
+    // 如果用户已经交互过，则不显示气泡
+    if (window.isUserInteracted === true) return;
+    
+    var message;
+    
+    // 如果是黑猫且彩蛋已触发，显示特殊消息
+    if (window.selectedPet.name === '黑猫' && window.blackCatEggTriggered === true) {
+      var specialMessages = [
+        "喵~ 想和我聊天吗？点击我试试看~",
+        "喵~ 我在这里陪着你呢~",
+        "喵~ 今天天气真好，适合晒太阳~"
+      ];
+      message = specialMessages[Math.floor(Math.random() * specialMessages.length)];
+    } else {
+      // 随机选择一条消息
+      var randomMessageIndex = Math.floor(Math.random() * window.selectedPet.messages.length);
+      message = window.selectedPet.messages[randomMessageIndex];
+    }
+    
+    // 显示气泡
+    var container = document.querySelector('.lottie-animation-container');
+    if (container) {
+      showPetMessage(container, message);
+      
+      // 7秒后隐藏气泡
+      setTimeout(function() {
+        var existingBubble = container.querySelector('.pet-message-bubble');
+        if (existingBubble) {
+          existingBubble.remove();
+        }
+        
+        // 重新开始下一个15秒周期
+        window.startAutoBubbleCycle();
+      }, 7000);
+    }
+  }, 8000);
+};
+
 // 初始化Lottie动画
 function initLottieAnimation(){
   var container = document.getElementById('lottie-animation');
@@ -1657,83 +1702,47 @@ function initLottieAnimation(){
   iframe.title = selectedPet.name; // 添加标题，便于识别
   iframe.style.pointerEvents = 'none'; // 禁用iframe的鼠标事件，让点击事件穿透到容器
   
+  // 如果是奔跑吧少年，默认面向左侧
+  if (selectedPet.name === '奔跑吧少年') {
+    iframe.style.transform = 'scaleX(-1)';
+  }
+  
   // 将iframe添加到容器中
   container.appendChild(iframe);
   
-  // 自动切换气泡的变量
-  var autoBubbleTimer = null;
-  var isUserInteracted = false;
-  
-  // 黑猫彩蛋相关变量
-  var blackCatMessagesShown = [];
-  var blackCatEggTriggered = false;
-  
-  // 自动切换气泡的函数
-  function startAutoBubbleCycle() {
-    // 如果用户已经交互过，则不启动自动切换
-    if (isUserInteracted) return;
-    
-    // 先等待8秒（不显示气泡）
-    autoBubbleTimer = setTimeout(function() {
-      // 如果用户已经交互过，则不显示气泡
-      if (isUserInteracted) return;
-      
-      var message;
-      
-      // 如果是黑猫且彩蛋已触发，显示特殊消息
-      if (selectedPet.name === '黑猫' && blackCatEggTriggered) {
-        var specialMessages = [
-          "喵~ 想和我聊天吗？点击我试试看~",
-          "喵~ 我在这里陪着你呢~",
-          "喵~ 今天天气真好，适合晒太阳~"
-        ];
-        message = specialMessages[Math.floor(Math.random() * specialMessages.length)];
-      } else {
-        // 随机选择一条消息
-        var randomMessageIndex = Math.floor(Math.random() * selectedPet.messages.length);
-        message = selectedPet.messages[randomMessageIndex];
-      }
-      
-      // 显示气泡
-      showPetMessage(container, message);
-      
-      // 7秒后隐藏气泡
-      setTimeout(function() {
-        var existingBubble = container.querySelector('.pet-message-bubble');
-        if (existingBubble) {
-          existingBubble.remove();
-        }
-        
-        // 重新开始下一个15秒周期
-        startAutoBubbleCycle();
-      }, 7000);
-    }, 8000);
-  }
+  // 将这些变量提升到全局作用域，以便cleanupRace函数可以访问
+  window.desktopPets = desktopPets;
+  window.selectedPet = selectedPet;
+  window.autoBubbleTimer = null;
+  window.isUserInteracted = false;
+  window.blackCatMessagesShown = [];
+  window.blackCatEggTriggered = false;
+  window.runningBoyMessageCount = 0;
+  window.raceInvitationShown = false;
+  window.messageCount = 0;
+  window.clickCount = 0;
+  window.clickTimer = null;
   
   // 启动自动切换气泡
-  startAutoBubbleCycle();
-  
-  // 添加点击计数器
-  var clickCount = 0;
-  var clickTimer = null;
+  window.startAutoBubbleCycle();
   
   // 为容器添加点击事件
   container.addEventListener('click', function() {
-    clickCount++;
+    window.clickCount++;
     
     // 如果是第一次点击，设置一个定时器来重置计数器
-    if (clickCount === 1) {
-      clickTimer = setTimeout(function() {
+    if (window.clickCount === 1) {
+      window.clickTimer = setTimeout(function() {
         // 单击事件：显示宠物消息
         console.log('宠物被单击了');
         
         // 标记用户已经交互过
-        isUserInteracted = true;
+        window.isUserInteracted = true;
         
         // 清除自动切换定时器
-        if (autoBubbleTimer) {
-          clearTimeout(autoBubbleTimer);
-        }
+          if (typeof window.autoBubbleTimer === 'object' && window.autoBubbleTimer !== null) {
+            clearTimeout(window.autoBubbleTimer);
+          }
         
         // 移除已存在的气泡
         var existingBubble = container.querySelector('.pet-message-bubble');
@@ -1742,32 +1751,29 @@ function initLottieAnimation(){
         }
         
         // 如果当前宠物有交互语句，则显示气泡
-        if (selectedPet.messages && selectedPet.messages.length > 0) {
+    // 检查宠物是否有消息数组
+  if (typeof window.selectedPet === 'object' && window.selectedPet !== null && 
+      typeof window.selectedPet.messages === 'object' && window.selectedPet.messages !== null && 
+      window.selectedPet.messages.length > 0) {
           // 如果是黑猫，需要记录已显示的消息
-          if (selectedPet.name === '黑猫' && !blackCatEggTriggered) {
+          if (window.selectedPet.name === '黑猫' && window.blackCatEggTriggered === false) {
             // 找出还未显示过的消息
-            var availableMessages = selectedPet.messages.filter(function(msg) {
-              return blackCatMessagesShown.indexOf(msg) === -1;
+            var availableMessages = window.selectedPet.messages.filter(function(msg) {
+              return window.blackCatMessagesShown.indexOf(msg) === -1;
             });
             
             // 如果所有消息都已显示过，重置数组
             if (availableMessages.length === 0) {
-              availableMessages = selectedPet.messages;
-              blackCatMessagesShown = [];
+              availableMessages = window.selectedPet.messages;
+              window.blackCatMessagesShown = [];
             }
             
             // 随机选择一条可用消息
             var message = availableMessages[Math.floor(Math.random() * availableMessages.length)];
             
             // 记录已显示的消息
-            blackCatMessagesShown.push(message);
-            
-            // 检查是否所有消息都已显示过
-            if (blackCatMessagesShown.length === selectedPet.messages.length) {
-              // 触发彩蛋
-              triggerBlackCatEgg();
-            }
-          } else if (selectedPet.name === '黑猫' && blackCatEggTriggered) {
+            window.blackCatMessagesShown.push(message);
+          } else if (window.selectedPet.name === '黑猫' && window.blackCatEggTriggered === true) {
             // 如果黑猫彩蛋已触发，显示特殊消息
             var specialMessages = [
               "喵~ 你已经知道我的秘密了，但我们还是好朋友吧？",
@@ -1777,54 +1783,88 @@ function initLottieAnimation(){
             var message = specialMessages[Math.floor(Math.random() * specialMessages.length)];
           } else {
             // 其他宠物，随机选择一条消息
-            var randomMessageIndex = Math.floor(Math.random() * selectedPet.messages.length);
-            var message = selectedPet.messages[randomMessageIndex];
+            var randomMessageIndex = Math.floor(Math.random() * window.selectedPet.messages.length);
+            var message = window.selectedPet.messages[randomMessageIndex];
           }
           
           // 显示新气泡
           showPetMessage(container, message);
+          
+          // 对黑猫和奔跑吧少年增加对话计数
+          if (window.selectedPet.name === '黑猫') {
+            // 增加对话计数
+            window.messageCount++;
+            
+            // 如果是第6次对话且彩蛋未触发，则触发彩蛋
+            if (window.messageCount === 6 && window.blackCatEggTriggered === false) {
+              triggerBlackCatEgg();
+            }
+          } else if (window.selectedPet.name === '奔跑吧少年') {
+            // 增加对话计数
+            window.runningBoyMessageCount++;
+            
+            // 如果是第6次对话且比赛邀请未显示，则显示比赛邀请
+            if (window.runningBoyMessageCount === 6 && window.raceInvitationShown === false) {
+              window.raceInvitationShown = true;
+              setTimeout(function() {
+                showRaceInvitation();
+              }, 2000); // 2秒后显示比赛邀请
+            }
+          }
         }
         
         // 重置点击计数器
-        clickCount = 0;
+        window.clickCount = 0;
       }, 300); // 300毫秒内检测双击
-    } else if (clickCount === 2) {
+    } else if (window.clickCount === 2) {
       // 双击事件：切换宠物
       console.log('宠物被双击了，切换宠物');
       
       // 清除单击定时器
-      clearTimeout(clickTimer);
+      clearTimeout(window.clickTimer);
       
       // 获取当前宠物的索引
-      var currentIndex = desktopPets.findIndex(pet => pet.name === selectedPet.name);
+      var currentIndex = window.desktopPets.findIndex(pet => pet.name === window.selectedPet.name);
       
       // 计算下一个宠物的索引（循环）
-      var nextIndex = (currentIndex + 1) % desktopPets.length;
+      var nextIndex = (currentIndex + 1) % window.desktopPets.length;
       
       // 更新选中的宠物
-      selectedPet = desktopPets[nextIndex];
-      console.log('切换到宠物：', selectedPet.name);
+      window.selectedPet = window.desktopPets[nextIndex];
+      console.log('切换到宠物：', window.selectedPet.name);
       
       // 更新iframe的src
       var iframe = container.querySelector('iframe');
       if (iframe) {
-        iframe.src = selectedPet.url;
-        iframe.title = selectedPet.name;
+        // 先加载新宠物的URL
+        iframe.src = window.selectedPet.url;
+        iframe.title = window.selectedPet.name;
+        
+        // 在新宠物加载完成后，再设置transform样式
+        iframe.onload = function() {
+          // 如果是奔跑吧少年，设置面向左侧
+          if (window.selectedPet.name === '奔跑吧少年') {
+            iframe.style.transform = 'scaleX(-1)';
+          } else {
+            // 其他宠物重置transform样式
+            iframe.style.transform = '';
+          }
+        };
       }
       
       // 显示切换提示
       showPetMessage(container, `你好，我是你的新私人助理！`);
       
       // 重置用户交互状态，但不立即启动自动切换，等待切换提示消失后再启动
-      isUserInteracted = false;
+      window.isUserInteracted = false;
       
       // 延迟5秒后启动自动切换（等待切换提示消失）
       setTimeout(function() {
-        startAutoBubbleCycle();
+        window.startAutoBubbleCycle();
       }, 5000);
       
       // 重置点击计数器
-      clickCount = 0;
+      window.clickCount = 0;
     }
   });
 }
@@ -1856,363 +1896,30 @@ function showPetMessage(container, message) {
 // 黑猫彩蛋触发函数
 function triggerBlackCatEgg() {
   // 标记彩蛋已触发
-  blackCatEggTriggered = true;
+  window.blackCatEggTriggered = true;
   
   // 获取页面主体
   var body = document.body;
   var macosTheme = document.querySelector('.macos-theme');
   
-  // 创建黑色背景和白色网格效果
-  var easterEgg = document.createElement('div');
-  easterEgg.className = 'black-cat-easter-egg';
-  easterEgg.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-    z-index: 9999;
-    pointer-events: none;
-    animation: fadeIn 1s ease-in-out;
-  `;
-  
-  // 添加淡入动画
-  var style = document.createElement('style');
-  style.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
-  
-  // 添加到页面
-  body.appendChild(easterEgg);
-  
-  // 创建交互对话框容器
-  var dialogContainer = document.createElement('div');
-  dialogContainer.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    padding: 20px;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    z-index: 10000;
-    max-width: 95vw;
-    width: auto;
-    min-width: 280px;
-    animation: pulse 2s infinite;
-    box-sizing: border-box;
-  `;
-  
-  // 添加消息文本
-  var message = document.createElement('div');
-  message.style.cssText = `
-    font-size: 16px;
-    margin-bottom: 20px;
-    line-height: 1.5;
-    word-wrap: break-word;
-    white-space: normal;
-    text-align: center;
-  `;
-  message.textContent = '喵~ 你发现了本喵的秘密！接下来要怎么做呢？';
-  dialogContainer.appendChild(message);
-  
-  // 创建选项容器
-  var optionsContainer = document.createElement('div');
-  optionsContainer.style.cssText = `
-    display: flex;
-    gap: 15px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    margin: 20px auto 0;
-    flex-direction: column;
-  `;
-  
-  // 添加响应式样式
-  var responsiveStyle = document.createElement('style');
-  responsiveStyle.textContent = `
-    @media (min-width: 769px) {
-      .blackcat-options-container {
-        flex-direction: row !important;
+  // 将主题切换为纯黑色背景
+  if (macosTheme) {
+    macosTheme.classList.add('dark-theme');
+    
+    // 添加纯黑色背景样式 - 只改变背景，保持其他控件正常显示
+    var darkThemeStyle = document.createElement('style');
+    darkThemeStyle.id = 'dark-theme-style';
+    darkThemeStyle.textContent = `
+      .macos-theme.dark-theme,
+      .macos-theme.dark-theme .desktop {
+        background-color: #000 !important;
+        background-image: none !important;
       }
-    }
-  `;
-  document.head.appendChild(responsiveStyle);
+    `;
+    document.head.appendChild(darkThemeStyle);
+  }
   
-  // 为选项容器添加类名，以便媒体查询可以应用
-  optionsContainer.className = 'blackcat-options-container';
-  
-  // 选项A
-  var optionA = document.createElement('div');
-  optionA.style.cssText = `
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
-    padding: 15px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    text-align: left;
-    min-height: auto;
-    display: block;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    white-space: normal;
-    line-height: 1.4;
-    font-size: 14px;
-    width: 100%;
-    flex: 1;
-  `;
-  optionA.innerHTML = 'A：╮(╯▽╰)╭ 、(๑・̀ㅂ・́)و✧（表面惊讶实则无视）~';
-  optionA.addEventListener('click', function() {
-    // 选择A：保持在黑色页面
-    dialogContainer.remove();
-    showStuckMessage();
-  });
-  
-  // 选项B容器
-  var optionBContainer = document.createElement('div');
-  optionBContainer.style.cssText = `
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
-    padding: 15px;
-    transition: background-color 0.3s;
-    text-align: left;
-    min-height: auto;
-    display: block;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    white-space: normal;
-    line-height: 1.4;
-    font-size: 14px;
-    width: 100%;
-    cursor: pointer;
-    flex: 1;
-  `;
-  
-  // 创建选项B的文本内容
-  var optionBContent = document.createElement('div');
-  optionBContent.style.cssText = `
-    margin-bottom: 10px;
-  `;
-  optionBContent.textContent = 'B： ( ๑ • ́ • ́ ) 猫爷！我愿意支付';
-  optionBContainer.appendChild(optionBContent);
-  
-  // 创建输入框容器
-  var inputContainer = document.createElement('div');
-  inputContainer.style.cssText = `
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-  `;
-  
-  // 创建自定义数字输入控件
-  var numberInputContainer = document.createElement('div');
-  numberInputContainer.style.cssText = `
-    display: flex;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 6px;
-    overflow: hidden;
-    flex-shrink: 0;
-  `;
-  
-  // 减少按钮
-  var decreaseBtn = document.createElement('button');
-  decreaseBtn.innerHTML = '−';
-  decreaseBtn.style.cssText = `
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.7);
-    width: 24px;
-    height: 24px;
-    font-size: 16px;
-    font-weight: 300;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-  `;
-  
-  // 输入框
-  var fishInput = document.createElement('input');
-  fishInput.type = 'number';
-  fishInput.min = '1';
-  fishInput.placeholder = '输入';
-  fishInput.style.cssText = `
-    width: 50px;
-    background: transparent;
-    border: none;
-    color: white;
-    padding: 4px 2px;
-    text-align: center;
-    font-size: 14px;
-    outline: none;
-    -moz-appearance: textfield;
-    -webkit-appearance: textfield;
-    appearance: textfield;
-  `;
-  
-  // 隐藏Chrome/Safari/Edge中的上下箭头
-  var style = document.createElement('style');
-  style.textContent = `
-    input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    input[type=number] {
-      -moz-appearance: textfield;
-    }
-  `;
-  document.head.appendChild(style);
-  
-  // 增加按钮
-  var increaseBtn = document.createElement('button');
-  increaseBtn.innerHTML = '+';
-  increaseBtn.style.cssText = `
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.7);
-    width: 24px;
-    height: 24px;
-    font-size: 16px;
-    font-weight: 300;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-  `;
-  
-  // 添加按钮交互效果
-  decreaseBtn.addEventListener('mouseenter', function() {
-    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-    this.style.color = 'white';
-  });
-  
-  decreaseBtn.addEventListener('mouseleave', function() {
-    this.style.backgroundColor = 'transparent';
-    this.style.color = 'rgba(255, 255, 255, 0.7)';
-  });
-  
-  increaseBtn.addEventListener('mouseenter', function() {
-    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-    this.style.color = 'white';
-  });
-  
-  increaseBtn.addEventListener('mouseleave', function() {
-    this.style.backgroundColor = 'transparent';
-    this.style.color = 'rgba(255, 255, 255, 0.7)';
-  });
-  
-  // 添加按钮点击事件
-  decreaseBtn.addEventListener('click', function(e) {
-    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
-    var currentValue = parseInt(fishInput.value) || 1;
-    if (currentValue > 1) {
-      fishInput.value = currentValue - 1;
-    }
-  });
-  
-  increaseBtn.addEventListener('click', function(e) {
-    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
-    var currentValue = parseInt(fishInput.value) || 1;
-    fishInput.value = currentValue + 1;
-  });
-  
-  // 阻止输入框点击事件冒泡
-  fishInput.addEventListener('click', function(e) {
-    e.stopPropagation(); // 阻止事件冒泡，防止触发选项B的点击事件
-  });
-  
-  // 组装自定义输入控件
-  numberInputContainer.appendChild(decreaseBtn);
-  numberInputContainer.appendChild(fishInput);
-  numberInputContainer.appendChild(increaseBtn);
-  
-  inputContainer.appendChild(numberInputContainer);
-  
-  var fishText = document.createElement('span');
-  fishText.textContent = '条鱼孝敬您~';
-  fishText.style.flexShrink = '0';
-  inputContainer.appendChild(fishText);
-  
-  optionBContainer.appendChild(inputContainer);
-  
-  // 添加选项B的点击事件
-  optionBContainer.addEventListener('click', function() {
-    var fishCount = parseInt(fishInput.value) || 0;
-    if (fishCount < 1000) {
-      // 小于1000，保持在黑色页面
-      dialogContainer.remove();
-      showStuckMessage();
-    } else {
-      // 大于等于1000，关闭黑色页面并数鱼
-      dialogContainer.remove();
-      setTimeout(function() {
-        easterEgg.remove();
-        countFish(fishCount);
-      }, 500);
-    }
-  });
-  
-  // 保留回车键监听，用于桌面端
-  fishInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      e.stopPropagation(); // 阻止事件冒泡
-      var fishCount = parseInt(fishInput.value) || 0;
-      if (fishCount < 1000) {
-        // 小于1000，保持在黑色页面
-        dialogContainer.remove();
-        showStuckMessage();
-      } else {
-        // 大于等于1000，关闭黑色页面并数鱼
-        dialogContainer.remove();
-        setTimeout(function() {
-          easterEgg.remove();
-          countFish(fishCount);
-        }, 500);
-      }
-    }
-  });
-  
-  optionsContainer.appendChild(optionA);
-  optionsContainer.appendChild(optionBContainer);
-  dialogContainer.appendChild(optionsContainer);
-  
-  // 添加脉冲动画
-  var pulseStyle = document.createElement('style');
-  pulseStyle.textContent = `
-    @keyframes pulse {
-      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(pulseStyle);
-  
-  body.appendChild(dialogContainer);
-  
-  console.log('黑猫彩蛋已触发！');
+  console.log('黑猫彩蛋已触发！背景已切换为纯黑色。');
 }
 
 // 显示卡在黑色页面的消息
@@ -3061,4 +2768,541 @@ const MIN_SCALE = 0.5; // 允许缩小到原始大小的50%
 }
 
 // 点击事件委托已移至 openPhotosWindow 内部，避免全局引用未定义变量。
+
+// 奔跑吧少年比赛邀请函数
+function showRaceInvitation() {
+  var container = document.querySelector('.lottie-animation-container');
+  if (!container) return;
+  
+  // 显示比赛邀请
+  showPetMessage(container, '跟我比速度吧，在空白处单击鼠标！');
+  
+  // 延迟3秒后显示倒计时
+  setTimeout(function() {
+    startRaceCountdown();
+  }, 3000);
+}
+
+// 比赛倒计时函数
+function startRaceCountdown() {
+  var container = document.querySelector('.lottie-animation-container');
+  if (!container) return;
+  
+  // 创建倒计时元素
+  var countdown = document.createElement('div');
+  countdown.id = 'race-countdown';
+  countdown.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-weight: bold;
+    color: #ff6b6b;
+    z-index: 10000;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.7);
+    animation: pulse 1s infinite;
+  `;
+  document.body.appendChild(countdown);
+  
+  // 倒计时动画
+  var count = 3;
+  countdown.textContent = count;
+  
+  var countdownInterval = setInterval(function() {
+    count--;
+    if (count > 0) {
+      countdown.textContent = count;
+      // 添加缩放动画
+      countdown.style.transform = 'translate(-50%, -50%) scale(1.2)';
+      setTimeout(function() {
+        countdown.style.transform = 'translate(-50%, -50%) scale(1)';
+      }, 200);
+    } else if (count === 0) {
+      countdown.textContent = 'GO!';
+      countdown.style.color = '#51cf66';
+      countdown.style.transform = 'translate(-50%, -50%) scale(1.5)';
+    } else {
+      clearInterval(countdownInterval);
+      countdown.remove();
+      // 开始比赛
+      startRace();
+    }
+  }, 1000);
+}
+
+// 开始比赛函数
+function startRace() {
+  var container = document.querySelector('.lottie-animation-container');
+  if (!container) return;
+  
+  // 创建进度条容器
+  var progressBarContainer = document.createElement('div');
+  progressBarContainer.id = 'race-progress-container';
+  progressBarContainer.className = 'race-progress-container';
+  progressBarContainer.style.display = 'block';
+  
+  // 创建进度条
+  var progressBar = document.createElement('div');
+  progressBar.id = 'race-progress-bar';
+  progressBar.className = 'loader';
+  // 不设置任何内联样式，让CSS动画完全控制进度条
+  progressBarContainer.appendChild(progressBar);
+  document.body.appendChild(progressBarContainer);
+  
+  // 创建进度显示
+  var progressDisplay = document.createElement('div');
+  progressDisplay.id = 'race-progress-display';
+  progressDisplay.style.cssText = `
+    position: fixed;
+    top: calc(75% - 30px);
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+  `;
+  document.body.appendChild(progressDisplay);
+  
+  // 初始化游戏状态
+  window.raceGame = {
+    clicks: 0,
+    totalClicks: 100,
+    startTime: Date.now(),
+    isActive: true,
+    progressBar: progressBar,
+    progressDisplay: progressDisplay,
+    petElement: container.querySelector('iframe'),
+    initialPetLeft: window.innerWidth - 150, // 宠物初始位置在屏幕右侧
+    lastClickTime: 0, // 上次点击时间
+    comboCount: 0, // 连击计数
+    comboTimeout: null // 连击超时计时器
+  };
+  
+  // 更新进度显示
+  updateRaceProgress();
+  
+  // 添加点击事件监听器
+  document.addEventListener('click', handleRaceClick);
+  
+  // 显示开始消息
+  showPetMessage(container, '比赛开始！快速点击空白区域！');
+}
+
+// 处理比赛点击事件
+function handleRaceClick(event) {
+  // 如果比赛未激活，不处理点击
+  if (typeof window.raceGame !== 'object' || window.raceGame === null || window.raceGame.isActive !== true) return;
+  
+  // 如果点击的是UI元素，不处理
+  if (event.target.closest('.macos-window') || 
+      event.target.closest('.dock') || 
+      event.target.closest('.menu-bar') ||
+      event.target.closest('.lottie-animation-container') ||
+      event.target.closest('.pet-message-bubble')) {
+    return;
+  }
+  
+  // 计算连击
+  var currentTime = Date.now();
+  var timeDiff = currentTime - window.raceGame.lastClickTime;
+  
+  // 如果两次点击间隔小于500毫秒，视为连击
+  if (timeDiff < 500 && window.raceGame.lastClickTime > 0) {
+    window.raceGame.comboCount++;
+    
+    // 清除之前的连击超时计时器
+    if (window.raceGame.comboTimeout) {
+      clearTimeout(window.raceGame.comboTimeout);
+    }
+    
+    // 设置新的连击超时计时器
+    window.raceGame.comboTimeout = setTimeout(function() {
+      window.raceGame.comboCount = 0;
+    }, 600);
+    
+    // 根据连击数给予额外进度奖励
+    var bonusProgress = 0;
+    if (window.raceGame.comboCount >= 10) {
+      bonusProgress = 3; // 10连击及以上，额外3%进度
+    } else if (window.raceGame.comboCount >= 7) {
+      bonusProgress = 2; // 7-9连击，额外2%进度
+    } else if (window.raceGame.comboCount >= 5) {
+      bonusProgress = 1; // 5-6连击，额外1%进度
+    }
+    
+    // 应用额外进度
+    if (bonusProgress > 0) {
+      window.raceGame.clicks += bonusProgress;
+    }
+  } else {
+    // 重置连击计数
+    window.raceGame.comboCount = 1;
+  }
+  
+  // 更新上次点击时间
+  window.raceGame.lastClickTime = currentTime;
+  
+  // 增加点击计数
+  window.raceGame.clicks++;
+  
+  // 更新进度
+  updateRaceProgress();
+  
+  // 检查是否完成比赛
+  if (window.raceGame.clicks >= window.raceGame.totalClicks) {
+    endRace();
+  }
+}
+
+// 更新比赛进度
+function updateRaceProgress() {
+  if (typeof window.raceGame !== 'object' || window.raceGame === null) return;
+  
+  var progress = (window.raceGame.clicks / window.raceGame.totalClicks) * 100;
+  // 设置进度条宽度，使用CSS过渡实现平滑增长
+  window.raceGame.progressBar.style.width = progress + '%';
+  
+  // 如果进度大于0，添加active类以显示光点动画
+  if (progress > 0) {
+    window.raceGame.progressBar.classList.add('active');
+  }
+  
+  // 更新显示文本
+  window.raceGame.progressDisplay.textContent = `${window.raceGame.clicks}/${window.raceGame.totalClicks} (${Math.round(progress)}%)`;
+  
+  // 更新宠物位置
+  updatePetPosition(progress);
+}
+
+// 更新宠物位置
+function updatePetPosition(progress) {
+  if (typeof window.raceGame !== 'object' || window.raceGame === null || typeof window.raceGame.petElement !== 'object' || window.raceGame.petElement === null) return;
+  
+  // 计算宠物应该移动的距离（从右到左）
+  var maxDistance = window.innerWidth * 0.8; // 最大移动距离为屏幕宽度的80%
+  var currentDistance = (progress / 100) * maxDistance;
+  // 从右往左移动：初始位置在右侧，随着进度增加向左移动
+  var newPosition = window.raceGame.initialPetLeft - currentDistance;
+  
+  // 限制宠物在屏幕范围内，考虑翻转后的位置偏移
+  newPosition = Math.max(75, Math.min(window.innerWidth - 75, newPosition));
+  
+  // 更新宠物位置
+  window.raceGame.petElement.style.position = 'fixed';
+  window.raceGame.petElement.style.left = newPosition + 'px';
+  window.raceGame.petElement.style.top = '75%';
+  // 水平翻转宠物，使其面向左侧（移动方向），并调整位置以保持完全可见
+  window.raceGame.petElement.style.transform = 'translateX(-50%) scaleX(-1)';
+  window.raceGame.petElement.style.transformOrigin = 'center center';
+  window.raceGame.petElement.style.zIndex = '9998';
+}
+
+// 结束比赛
+function endRace() {
+  if (typeof window.raceGame !== 'object' || window.raceGame === null) return;
+  
+  // 标记比赛结束
+  window.raceGame.isActive = false;
+  
+  // 计算用时
+  var endTime = Date.now();
+  var duration = (endTime - window.raceGame.startTime) / 1000; // 转换为秒
+  
+  // 计算点击速度（次/秒）
+  var clickSpeed = (window.raceGame.totalClicks / duration).toFixed(2);
+  
+  // 记录比赛数据
+  saveRaceData(duration, clickSpeed);
+  
+  // 移除点击事件监听器
+  document.removeEventListener('click', handleRaceClick);
+  
+  // 显示重玩选项
+  setTimeout(function() {
+    showRaceReplayOption(duration, clickSpeed);
+  }, 1000);
+}
+
+// 保存比赛数据
+function saveRaceData(duration, clickSpeed) {
+  try {
+    // 获取现有的比赛记录
+    var raceHistory = JSON.parse(localStorage.getItem('runningBoyRaceHistory') || '[]');
+    
+    // 创建新的比赛记录
+    var newRecord = {
+      duration: duration,
+      clickSpeed: parseFloat(clickSpeed),
+      date: new Date().toISOString()
+    };
+    
+    // 添加到历史记录
+    raceHistory.push(newRecord);
+    
+    // 限制历史记录数量为最近10次
+    if (raceHistory.length > 10) {
+      raceHistory = raceHistory.slice(-10);
+    }
+    
+    // 保存历史记录
+    localStorage.setItem('runningBoyRaceHistory', JSON.stringify(raceHistory));
+    
+    // 获取并更新最佳成绩
+    var bestRecord = JSON.parse(localStorage.getItem('runningBoyBestRecord') || '{}');
+    
+    // 如果没有最佳记录或者当前成绩更好，则更新最佳记录
+    if (!bestRecord.duration || duration < bestRecord.duration) {
+      bestRecord = {
+        duration: duration,
+        clickSpeed: parseFloat(clickSpeed),
+        date: newRecord.date
+      };
+      localStorage.setItem('runningBoyBestRecord', JSON.stringify(bestRecord));
+    }
+  } catch (e) {
+    console.error('保存比赛数据失败:', e);
+  }
+}
+
+// 获取最佳成绩
+function getBestRaceRecord() {
+  try {
+    return JSON.parse(localStorage.getItem('runningBoyBestRecord') || '{}');
+  } catch (e) {
+    console.error('获取最佳成绩失败:', e);
+    return {};
+  }
+}
+
+// 获取比赛历史
+function getRaceHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('runningBoyRaceHistory') || '[]');
+  } catch (e) {
+    console.error('获取比赛历史失败:', e);
+    return [];
+  }
+}
+
+// 显示重玩选项
+function showRaceReplayOption(duration, clickSpeed) {
+  var container = document.querySelector('.lottie-animation-container');
+  if (!container) return;
+  
+  // 获取最佳成绩
+  var bestRecord = getBestRaceRecord();
+  var bestMessage = bestRecord.duration ? 
+    `最佳纪录: ${bestRecord.duration.toFixed(1)}秒，速度${bestRecord.clickSpeed}次/秒` : 
+    '这是你的第一次比赛，加油！';
+  
+  // 创建选择对话框容器
+  var dialogContainer = document.createElement('div');
+  dialogContainer.id = 'race-replay-dialog';
+  dialogContainer.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    text-align: center;
+    min-width: 300px;
+  `;
+  
+  // 创建成绩信息文本
+  var recordText = document.createElement('p');
+  recordText.textContent = `本次成绩: ${duration.toFixed(1)}秒，速度${clickSpeed}次/秒`;
+  recordText.style.cssText = `
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #333;
+  `;
+  
+  // 创建最佳成绩信息文本
+  var bestText = document.createElement('p');
+  bestText.textContent = bestMessage;
+  bestText.style.cssText = `
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #666;
+  `;
+  
+  // 创建问题文本
+  var questionText = document.createElement('p');
+  questionText.textContent = '是否再次挑战？';
+  questionText.style.cssText = `
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+  `;
+  
+  // 创建按钮容器
+  var buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  `;
+  
+  // 创建"是"按钮
+  var yesButton = document.createElement('button');
+  yesButton.textContent = '是';
+  yesButton.style.cssText = `
+    padding: 10px 25px;
+    background-color: #51cf66;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  `;
+  
+  yesButton.addEventListener('mouseenter', function() {
+    yesButton.style.backgroundColor = '#40c057';
+    yesButton.style.transform = 'scale(1.05)';
+  });
+  
+  yesButton.addEventListener('mouseleave', function() {
+    yesButton.style.backgroundColor = '#51cf66';
+    yesButton.style.transform = 'scale(1)';
+  });
+  
+  yesButton.addEventListener('click', function() {
+    // 移除对话框
+    dialogContainer.remove();
+    
+    // 清理当前比赛
+    cleanupRace();
+    
+    // 延迟2秒后重新开始
+    setTimeout(function() {
+      startRaceCountdown();
+    }, 2000);
+  });
+  
+  // 创建"否"按钮
+  var noButton = document.createElement('button');
+  noButton.textContent = '否';
+  noButton.style.cssText = `
+    padding: 10px 25px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  `;
+  
+  noButton.addEventListener('mouseenter', function() {
+    noButton.style.backgroundColor = '#fa5252';
+    noButton.style.transform = 'scale(1.05)';
+  });
+  
+  noButton.addEventListener('mouseleave', function() {
+    noButton.style.backgroundColor = '#ff6b6b';
+    noButton.style.transform = 'scale(1)';
+  });
+  
+  noButton.addEventListener('click', function() {
+    // 移除对话框
+    dialogContainer.remove();
+    
+    // 清理当前比赛
+    cleanupRace();
+  });
+  
+  // 组装对话框
+  buttonContainer.appendChild(yesButton);
+  buttonContainer.appendChild(noButton);
+  dialogContainer.appendChild(recordText);
+  dialogContainer.appendChild(bestText);
+  dialogContainer.appendChild(questionText);
+  dialogContainer.appendChild(buttonContainer);
+  
+  document.body.appendChild(dialogContainer);
+}
+
+// 清理比赛元素
+function cleanupRace() {
+  // 清理连击计时器
+  if (typeof window.raceGame === 'object' && window.raceGame !== null && typeof window.raceGame.comboTimeout === 'object' && window.raceGame.comboTimeout !== null) {
+    clearTimeout(window.raceGame.comboTimeout);
+  }
+  
+  // 移除进度条
+  var progressBarContainer = document.getElementById('race-progress-container');
+  if (typeof progressBarContainer === 'object' && progressBarContainer !== null) {
+    progressBarContainer.remove();
+  }
+  
+  // 移除进度显示
+  var progressDisplay = document.getElementById('race-progress-display');
+  if (typeof progressDisplay === 'object' && progressDisplay !== null) {
+    progressDisplay.remove();
+  }
+  
+  // 移除重玩按钮（旧版本）
+  var replayButton = document.getElementById('race-replay-button');
+  if (typeof replayButton === 'object' && replayButton !== null) {
+    replayButton.remove();
+  }
+  
+  // 移除重玩对话框（新版本）
+  var replayDialog = document.getElementById('race-replay-dialog');
+  if (typeof replayDialog === 'object' && replayDialog !== null) {
+    replayDialog.remove();
+  }
+  
+  // 重置宠物位置到正常位置
+  var container = document.querySelector('.lottie-animation-container');
+  if (typeof container === 'object' && container !== null) {
+    var petElement = container.querySelector('iframe');
+    if (typeof petElement === 'object' && petElement !== null) {
+      // 先重置所有样式
+      petElement.style.position = '';
+      petElement.style.left = '';
+      petElement.style.top = '';
+      petElement.style.transform = '';
+      petElement.style.transformOrigin = '';
+      petElement.style.zIndex = '';
+      
+      // 恢复默认样式（根据当前宠物类型）
+      if (window.selectedPet.name === '奔跑吧少年') {
+        petElement.style.transform = 'scaleX(-1)';
+      }
+      
+      // 确保iframe的pointerEvents为none，让点击事件穿透到容器
+      petElement.style.pointerEvents = 'none';
+    }
+    
+    // 恢复自动气泡功能
+    // 重置用户交互状态，允许自动气泡再次启动
+    window.isUserInteracted = false;
+    
+    // 清除可能存在的自动气泡定时器
+    if (typeof window.autoBubbleTimer === 'object' && window.autoBubbleTimer !== null) {
+      clearTimeout(window.autoBubbleTimer);
+    }
+    
+    // 延迟3秒后重新启动自动气泡，给用户一点休息时间
+    setTimeout(function() {
+      window.startAutoBubbleCycle();
+    }, 3000);
+  }
+  
+  // 重置游戏状态
+  window.raceGame = null;
+}
+
 })();
