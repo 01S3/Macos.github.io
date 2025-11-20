@@ -83,6 +83,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
                   transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
    }
   .macos-theme .menu-bar.photo-mode.expanded::after { background: transparent; box-shadow: none; }
+  .macos-theme .menu-bar.expanded::after { background: transparent; box-shadow: none; }
 /* 扩展状态：向下并放大 */
     .macos-theme .menu-bar.expanded {
       /* 扩展态圆心位于顶栏底部之下 8px，加上半个放大后的高度 */
@@ -317,7 +318,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
   width: 55px; /* 与旧版一致 */
   height: 55px; /* 与旧版一致 */
   object-fit: contain;
-  transition: all 0.3s ease; /* 与旧版一致 */
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 使用更平滑的贝塞尔曲线 */
   display: block;
 }
 
@@ -411,12 +412,15 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
   box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25);
 }
 .macos-theme .about-me-content { font-size: 15px; line-height: 1.7; color: #333; }
-.macos-theme .about-me-title { font-weight: 600; color: #007aff; margin-bottom: 8px; }
+.macos-theme .about-me-title { font-weight: 600; color: #007aff; margin-bottom: 12px; }
+.macos-theme .about-me-section { margin-bottom: 12px; }
+.macos-theme .about-me-subtitle { font-weight: 600; color: #333; margin-bottom: 6px; font-size: 14px; }
 .macos-theme .about-me-list { margin: 0; padding-left: 18px; list-style: disc; }
 .macos-theme .about-me-list li { margin: 6px 0; }
 .macos-theme .about-me-content .highlight { background: #007aff; color: #ffffff; border-radius: 4px; padding: 0 4px; }
 .macos-theme .about-me-content .accent { color: #007aff; font-weight: 600; }
 .macos-theme .about-me-content .warn { color: #ff3b30; font-weight: 600; text-decoration: line-through; text-decoration-thickness: 2px; }
+.macos-theme .about-me-footer { margin-top: 10px; font-style: italic; color: #666; font-size: 13px; text-align: center; }
 
 /* 移动端顶栏与汉堡菜单 */
 .macos-theme .menu-right .hamburger {
@@ -817,9 +821,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 }
 .macos-theme .menu-bar:not(.expanded) .pill-bg { border-radius: 9999px; }
   .macos-theme .menu-bar.photo-mode.expanded .pill-bg { opacity: 1; pointer-events: auto; cursor: pointer; }
+  .macos-theme .menu-bar.expanded:not(.photo-mode) .pill-bg { opacity: 0.8; pointer-events: auto; }
   .macos-theme .menu-bar.pill-animate .pill-bg { animation: diFollow 2s ease-in-out; }
-  .macos-theme .pill-bg .fill { position: absolute; left: -10px; right: -10px; bottom: -10px; top: -10px; background-size: cover; background-position: center; filter: blur(2px) saturate(1.00); }
-  .macos-theme .pill-bg .frost { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.50); pointer-events: none; }
+  .macos-theme .pill-bg .fill { position: absolute; left: -10px; right: -10px; bottom: -10px; top: -10px; background-size: cover; background-position: center; filter: blur(2px) saturate(0.8) brightness(0.7) contrast(1.2); }
+  .macos-theme .pill-bg .frost { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: transparent; pointer-events: none; }
 
   /* 药丸内容容器：跟随圆心定位，覆盖在药丸之上 */
 .macos-theme .pill-content {

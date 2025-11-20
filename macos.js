@@ -905,13 +905,28 @@ function openAboutMeWindows(){
   var wAbout = createFixedWindow('About Me', 
     '<div class="about-me-content">' +
       '<div class="about-me-title">Hello！！我是 WANG，你好！！地球村的良民~</div>' +
+      '<div class="about-me-section">' +
+        '<div class="about-me-subtitle">🌟 关于这个网站</div>' +
         '<ul class="about-me-list">' +
           '<li>纯<span class="highlight">AI</span>搭建的网站，加上一缪缪自己的审美（<span class="accent">yes~</span>）</li>' +
           '<li>建议不要问关于代码的问题，因为我<span class="accent">真不知道</span>！</li>' +
-          '<li>目前开发的APP只有\'<span class="highlight">相册</span>\'和\'<span class="highlight">Survival Guide</span>\'，我管这个叫生存指南，其实就是博客文章；相册有自己跑的<span class="accent">AIGC</span>随便吃，要神秘代码可以找我~</li>' +
+        '</ul>' +
+      '</div>' +
+      '<div class="about-me-section">' +
+        '<div class="about-me-subtitle">📱 我的应用</div>' +
+        '<ul class="about-me-list">' +
+          '<li><span class="highlight">相册</span> - 有自己跑的<span class="accent">AIGC</span>随便吃，要神秘代码可以找我~</li>' +
+          '<li><span class="highlight">Survival Guide</span> - 我管这个叫生存指南，其实就是博客文章</li>' +
+        '</ul>' +
+      '</div>' +
+      '<div class="about-me-section">' +
+        '<div class="about-me-subtitle">🌈 更新频率</div>' +
+        '<ul class="about-me-list">' +
           '<li>随心情建设网站（<span class="warn">下雨天不更！！</span>）</li>' +
         '</ul>' +
-      '</div>', 15, 15, 1003);
+      '</div>' +
+      '<div class="about-me-footer">感谢访问我的小天地！</div>' +
+    '</div>', 15, 15, 1003);
   // Design Cases（图片展示）
   var wDesign = createFixedWindow('Design Cases',
     '<div style="display:flex; justify-content:center; align-items:center; height:100%; width:100%; padding:10px;">' +
@@ -1406,7 +1421,7 @@ function bindDockIcons(){
     var img = icon.querySelector('img');
     if (!img) return;
     icon.addEventListener('mouseenter', function(){
-      img.style.transform = 'scale(1.5)';
+      img.style.transform = 'scale(1.5) translateY(-3px)';
       img.style.transformOrigin = 'center bottom';
     });
     icon.addEventListener('mouseleave', function(){
@@ -1823,6 +1838,11 @@ function initLottieAnimation(){
       // 清除单击定时器
       clearTimeout(window.clickTimer);
       
+      // 检查是否是黑猫彩蛋触发的状态，如果是，则退出黑猫模式
+      if (window.blackCatEggTriggered === true) {
+        exitBlackCatMode();
+      }
+      
       // 获取当前宠物的索引
       var currentIndex = window.desktopPets.findIndex(pet => pet.name === window.selectedPet.name);
       
@@ -1832,6 +1852,14 @@ function initLottieAnimation(){
       // 更新选中的宠物
       window.selectedPet = window.desktopPets[nextIndex];
       console.log('切换到宠物：', window.selectedPet.name);
+      
+      // 如果切换到黑猫，重置黑猫彩蛋相关状态
+      if (window.selectedPet.name === '黑猫') {
+        window.blackCatEggTriggered = false;
+        window.messageCount = 0;
+        window.blackCatMessagesShown = [];
+        console.log('已重置黑猫彩蛋状态，可以再次触发彩蛋');
+      }
       
       // 更新iframe的src
       var iframe = container.querySelector('iframe');
@@ -1906,7 +1934,7 @@ function triggerBlackCatEgg() {
   if (macosTheme) {
     macosTheme.classList.add('dark-theme');
     
-    // 添加纯黑色背景样式 - 只改变背景，保持其他控件正常显示
+    // 添加纯黑色背景样式 - 改变背景和所有文字颜色
     var darkThemeStyle = document.createElement('style');
     darkThemeStyle.id = 'dark-theme-style';
     darkThemeStyle.textContent = `
@@ -1915,11 +1943,34 @@ function triggerBlackCatEgg() {
         background-color: #000 !important;
         background-image: none !important;
       }
+      
+      /* 顶栏菜单文字颜色 */
+      .macos-theme.dark-theme .menu-bar,
+      .macos-theme.dark-theme .menu-item,
+      .macos-theme.dark-theme .menu-right {
+        color: #fff !important;
+      }
+      
+      /* 欢迎文字和打字机光标颜色 */
+      .macos-theme.dark-theme .welcome-text,
+      .macos-theme.dark-theme .welcome-text .typing-cursor {
+        color: #fff !important;
+      }
+      
+      /* 桌面图标标签颜色 */
+      .macos-theme.dark-theme .icon-label {
+        color: #fff !important;
+      }
+      
+      /* 便签文字颜色 */
+      .macos-theme.dark-theme .sticky-note {
+        color: #fff !important;
+      }
     `;
     document.head.appendChild(darkThemeStyle);
   }
   
-  console.log('黑猫彩蛋已触发！背景已切换为纯黑色。');
+  console.log('黑猫彩蛋已触发！背景已切换为纯黑色，文字颜色已调整为白色。');
 }
 
 // 显示卡在黑色页面的消息
@@ -1938,9 +1989,35 @@ function showStuckMessage() {
     text-align: center;
     z-index: 10000;
   `;
-  stuckMessage.textContent = '喵喵喵你个喵喵，喵了个喵的~ 喵~';
+  stuckMessage.innerHTML = '喵喵喵你个喵喵，喵了个喵的~ 喵~<br><br><small>双击宠物切换到下一只，即可退出黑猫模式</small>';
   
   body.appendChild(stuckMessage);
+}
+
+// 退出黑猫模式函数
+function exitBlackCatMode() {
+  // 移除黑色主题样式
+  var darkThemeStyle = document.getElementById('dark-theme-style');
+  if (darkThemeStyle) {
+    darkThemeStyle.parentNode.removeChild(darkThemeStyle);
+  }
+  
+  // 移除dark-theme类
+  var macosTheme = document.querySelector('.macos-theme');
+  if (macosTheme) {
+    macosTheme.classList.remove('dark-theme');
+  }
+  
+  // 移除卡在黑色页面的消息
+  var stuckMessage = document.querySelector('div[style*="position: fixed"]');
+  if (stuckMessage && stuckMessage.textContent.includes('喵喵喵你个喵喵')) {
+    stuckMessage.parentNode.removeChild(stuckMessage);
+  }
+  
+  // 重置黑猫彩蛋状态
+  window.blackCatEggTriggered = false;
+  
+  console.log('已退出黑猫模式，恢复正常主题。');
 }
 
 // 数鱼功能
@@ -2229,6 +2306,15 @@ document.addEventListener('DOMContentLoaded', function(){
       menuBar.classList.remove('photo-mode');
       var _photoImg = menuBar.querySelector('.pill-photo img');
       if (_photoImg) _photoImg.src = '';
+      
+      // 为文章模式设置随机背景图片
+      var pillBgFill = menuBar.querySelector('.pill-bg .fill');
+      if (pillBgFill && hasPhotos) {
+        var randomBgUrl = pickRandomPhoto();
+        if (randomBgUrl) {
+          pillBgFill.style.backgroundImage = 'url("'+randomBgUrl+'")';
+        }
+      }
 
       if (expanded) {
         // 展开：完整信息 + 徽标（溢出时启用跑马灯）
