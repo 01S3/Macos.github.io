@@ -2435,8 +2435,25 @@ function triggerBlackCatEgg() {
       }
       
       .macos-theme.dark-theme #article-list-window .article-badges .mac-badge {
-        background-color: rgba(255, 255, 255, 0.2) !important;
         color: #fff !important;
+      }
+      .macos-theme.dark-theme #article-list-window .article-badges .mac-badge-new {
+        background: #0A84FF !important;
+        color: #fff !important;
+        border: 1px solid #006AE6 !important;
+        box-shadow: 0 2px 6px rgba(10, 132, 255, 0.25) !important;
+      }
+      .macos-theme.dark-theme #article-list-window .article-badges .mac-badge-top {
+        background: #5E5CE6 !important;
+        color: #fff !important;
+        border: 1px solid #4B4AC2 !important;
+        box-shadow: 0 2px 6px rgba(94, 92, 230, 0.25) !important;
+      }
+      .macos-theme.dark-theme #article-list-window .article-badges .mac-badge-hot {
+        background: #FF3B30 !important;
+        color: #fff !important;
+        border: 1px solid #D62A22 !important;
+        box-shadow: 0 2px 6px rgba(255, 59, 48, 0.25) !important;
       }
       
       /* Survival Guide 右侧内容栏深色模式 */
