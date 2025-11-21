@@ -1,6 +1,81 @@
 // macOS 主题脚本（逐步迁移中）
 (function(){
-  console.log('[macos-theme] assets loaded');
+  // 定时器统一管理器 - 防止内存泄漏
+  const timerManager = {
+    timers: new Set(),
+    animationFrames: new Set(),
+    
+    setTimeout: function(fn, delay) {
+      const id = setTimeout(() => {
+        fn();
+        this.timers.delete(id);
+      }, delay);
+      this.timers.add(id);
+      return id;
+    },
+    
+    clearTimeout: function(id) {
+      if (this.timers.has(id)) {
+        clearTimeout(id);
+        this.timers.delete(id);
+      }
+    },
+    
+    setInterval: function(fn, delay) {
+      const id = setInterval(fn, delay);
+      this.timers.add(id);
+      return id;
+    },
+    
+    clearInterval: function(id) {
+      if (this.timers.has(id)) {
+        clearInterval(id);
+        this.timers.delete(id);
+      }
+    },
+    
+    requestAnimationFrame: function(fn) {
+      const id = requestAnimationFrame(() => {
+        fn();
+        this.animationFrames.delete(id);
+      });
+      this.animationFrames.add(id);
+      return id;
+    },
+    
+    cancelAnimationFrame: function(id) {
+      if (this.animationFrames.has(id)) {
+        cancelAnimationFrame(id);
+        this.animationFrames.delete(id);
+      }
+    },
+    
+    clearAll: function() {
+      this.timers.forEach(id => clearTimeout(id) || clearInterval(id));
+      this.animationFrames.forEach(id => cancelAnimationFrame(id));
+      this.timers.clear();
+      this.animationFrames.clear();
+    }
+  };
+
+  // 页面卸载时清理所有定时器
+  window.addEventListener('beforeunload', function() {
+    timerManager.clearAll();
+  });
+
+  // 条件日志系统 - 清理调试代码
+  const logger = {
+    log: function(...args) {
+      if (window.location.hostname === 'localhost' || localStorage.getItem('debug')) {
+        console.log(...args);
+      }
+    },
+    error: function(...args) {
+      console.error(...args);
+    }
+  };
+
+  logger.log('[macos-theme] assets loaded');
 
   // 全局错误浮层
   (function(){
@@ -517,7 +592,18 @@ function openSurvivalGuideWindow(){
   var listHTML = '';
   if (posts.length > 0){
     listHTML = posts.map(function(p, idx){
-      var active = idx === 0 ? 'background:#e8e8e8;' : '';
+      var active = '';
+      var titleActive = '';
+      if (idx === 0) {
+        // 根据当前主题设置默认选中样式
+        if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+          active = 'background:rgba(255, 255, 255, 0.1);';
+          titleActive = 'color:rgb(10, 132, 255);';
+        } else {
+          active = 'background:#e8e8e8;';
+          titleActive = 'color:#1e66ff;';
+        }
+      }
       var full = (p.title || '');
       var short = full.length > 28 ? (full.slice(0, 28) + '…') : full;
       var date = (p.date || '');
@@ -533,7 +619,6 @@ function openSurvivalGuideWindow(){
       if (p.__isTop) badges.push('TOP');
       if (p.__isHot) badges.push('HOT');
       var badgesHTML = badges.map(function(b){ return '<span class="mac-badge mac-badge-'+b.toLowerCase()+'">'+b+'</span>'; }).join('');
-      var titleActive = idx === 0 ? 'color:#1e66ff;' : '';
       return [
         '<div class="article-item" data-url="'+p.url+'" data-index="'+idx+'" data-title="'+full+'" data-date="'+date+'"',
         '     style="padding:10px; cursor:pointer; '+active+'">',
@@ -542,7 +627,7 @@ function openSurvivalGuideWindow(){
         '    <div class="article-meta" style="color:#888; font-size:11px;">'+metaText+'</div>',
         '    <div class="article-badges" style="display:flex; gap:4px;">'+badgesHTML+'</div>',
         '  </div>',
-        '</div>'
+        '  </div>'
       ].join('');
     }).join('');
   } else {
@@ -675,24 +760,32 @@ function openSurvivalGuideWindow(){
       mask.style.zIndex = '25';
       mask.style.display = collapsed ? 'none' : 'block';
       contentEl.appendChild(mask);
-      function collapseSidebar(){
-        collapsed = true;
-        sidebar.style.transform = 'translateX(-100%)';
-        sidebar.style.pointerEvents = 'none';
-        toggle.textContent = '›';
-        toggle.style.display = 'flex';
-        toggle.style.left = '0px';
-        mask.style.display = 'none';
-      }
-      function expandSidebar(){
-        collapsed = false;
-        sidebar.style.transform = 'translateX(0)';
-        sidebar.style.pointerEvents = 'auto';
-        toggle.textContent = '‹';
-        toggle.style.display = 'none';
-        toggle.style.left = '0px';
-        mask.style.display = 'block';
-      }
+      // 统一的侧边栏控制函数 - 消除重复代码
+      const sidebarController = {
+        collapse: function() {
+          collapsed = true;
+          sidebar.style.transform = 'translateX(-100%)';
+          sidebar.style.pointerEvents = 'none';
+          toggle.textContent = '›';
+          toggle.style.display = 'flex';
+          toggle.style.left = '0px';
+          mask.style.display = 'none';
+        },
+        expand: function() {
+          collapsed = false;
+          sidebar.style.transform = 'translateX(0)';
+          sidebar.style.pointerEvents = 'auto';
+          toggle.textContent = '‹';
+          toggle.style.display = 'none';
+          toggle.style.left = '0px';
+          mask.style.display = 'block';
+        }
+      };
+
+      // 保持原有函数名兼容性
+      function collapseSidebar() { sidebarController.collapse(); }
+      function expandSidebar() { sidebarController.expand(); }
+      
       win._mobileSidebarControls = { collapseSidebar: collapseSidebar, expandSidebar: expandSidebar };
       toggle.addEventListener('click', function(){
         if (collapsed){
@@ -707,7 +800,7 @@ function openSurvivalGuideWindow(){
     }
   }
 
-  // 注入 iframe 字体栈，确保中文注释与代码块使用无衬线字体
+  // 注入 iframe 字体栈和深色模式样式
   function injectIframeFontStyle(iframe){
     if (!iframe) return;
     function doInject(){
@@ -716,23 +809,190 @@ function openSurvivalGuideWindow(){
         if (!doc) return;
         var head = doc.head || doc.getElementsByTagName('head')[0];
         if (!head) return;
-        if (head.querySelector('style[data-macos-font]')) return;
+        
+        // 检查是否需要注入深色模式样式
+        var isDarkMode = document.querySelector('.macos-theme.dark-theme') !== null;
+        
+        // 移除旧的样式（如果存在）
+        var oldStyle = head.querySelector('style[data-macos-font]');
+        if (oldStyle) {
+          oldStyle.parentNode.removeChild(oldStyle);
+        }
+        
         var style = doc.createElement('style');
         style.type = 'text/css';
         style.setAttribute('data-macos-font', '');
-        style.textContent = [
+        
+        var fontStyles = [
           'pre, code, kbd, samp, .hljs, .hljs *, .highlight, .highlight *, code[class*="language-"], pre[class*="language-"] {',
           "  font-family: 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'PingFang SC', 'Microsoft Yahei', 'Noto Sans SC', monospace, sans-serif !important;",
           '}'
-        ].join('\n');
+        ];
+        
+        var darkModeStyles = [];
+        if (isDarkMode) {
+          darkModeStyles = [
+            'body {',
+            '  background-color: #3a3a3c !important;',
+            '  color: #fff !important;',
+            '  margin-top: 0 !important;',
+            '  padding-top: 0 !important;',
+            '}',
+            'article, .content, .post, .main {',
+            '  background-color: #3a3a3c !important;',
+            '  color: #fff !important;',
+            '}',
+            'h1, h2, h3, h4, h5, h6 {',
+            '  color: #fff !important;',
+            '}',
+            'p, div, span {',
+            '  color: #fff !important;',
+            '}',
+            'a {',
+            '  color: #0a84ff !important;',
+            '}',
+            '/* 代码块样式 - 与浅色主题保持一致 */',
+            '.post-content .highlight {',
+            '  overflow: hidden !important;',
+            '  background: transparent !important;',
+            '}',
+            '.post-content .highlight table {',
+            '  width: 100% !important;',
+            '  table-layout: fixed !important;',
+            '  border-collapse: separate !important;',
+            '  border-spacing: 0 !important;',
+            '}',
+            '.post-content .highlight td {',
+            '  vertical-align: top !important;',
+            '}',
+            '/* 左列行号 */',
+            '.post-content .highlight td.gutter {',
+            '  width: 2.8em !important;',
+            '  padding: 12px 10px !important;',
+            '  text-align: right !important;',
+            '  color: #7f7f7f !important;',
+            '  user-select: none !important;',
+            '  background: #1a1a1a !important;',
+            '  border: 1px solid #2a2a2a !important;',
+            '  border-right: 0 !important;',
+            '  border-radius: 6px 0 0 6px !important;',
+            '}',
+            '/* 右列代码 */',
+            '.post-content .highlight td.code {',
+            '  width: auto !important;',
+            '  padding: 12px !important;',
+            '  background: #1e1e1e !important;',
+            '  color: #d4d4d4 !important;',
+            '  border: 1px solid #2a2a2a !important;',
+            '  border-left: 0 !important;',
+            '  border-radius: 0 6px 6px 0 !important;',
+            '}',
+            '/* 代码块整体衬底 - 深色主题适配 */',
+            '.post-content .highlight {',
+            '  background: #1a1a1a !important;',
+            '  border-radius: 6px !important;',
+            '  overflow: hidden !important;',
+            '}',
+            '/* 单元格内的 pre 样式 */',
+            '.post-content .highlight td.gutter pre,',
+            '.post-content .highlight td.code pre {',
+            '  margin: 0 !important;',
+            '  padding: 0 !important;',
+            '  background: transparent !important;',
+            '  border-radius: 0 !important;',
+            '  font-size: 14px !important;',
+            '  line-height: 1.6 !important;',
+            '  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;',
+            '}',
+            '/* 行号不换行，代码可自动换行 */',
+            '.post-content .highlight td.gutter pre {',
+            '  white-space: pre !important;',
+            '}',
+            '.post-content .highlight td.code pre {',
+            '  white-space: pre-wrap !important;',
+            '  word-break: break-word !important;',
+            '  overflow-wrap: anywhere !important;',
+            '}',
+            '/* Trae风格的语法高亮（与浅色主题完全一致） */',
+            '.post-content .highlight .comment, .post-content .highlight .hljs-comment {',
+            '  color: #6a9955 !important;',
+            '}',
+            '.post-content .highlight .keyword, .post-content .highlight .hljs-keyword {',
+            '  color: #c586c0 !important;',
+            '}',
+            '.post-content .highlight .string, .post-content .highlight .hljs-string {',
+            '  color: #ce9178 !important;',
+            '}',
+            '.post-content .highlight .number, .post-content .highlight .hljs-number, .post-content .highlight .literal, .post-content .highlight .hljs-literal {',
+            '  color: #b5cea8 !important;',
+            '}',
+            '.post-content .highlight .title, .post-content .highlight .hljs-title, .post-content .highlight .function .title, .post-content .highlight .hljs-function .hljs-title {',
+            '  color: #dcdcaa !important;',
+            '}',
+            '.post-content .highlight .attr, .post-content .highlight .hljs-attr, .post-content .highlight .params, .post-content .highlight .hljs-params, .post-content .highlight .variable, .post-content .highlight .hljs-variable {',
+            '  color: #9cdcfe !important;',
+            '}',
+            '.post-content .highlight .built_in, .post-content .highlight .hljs-built_in {',
+            '  color: #4ec9b0 !important;',
+            '}',
+            '.post-content .highlight .meta, .post-content .highlight .hljs-meta {',
+            '  color: #c586c0 !important;',
+            '}',
+            '.post-content .highlight .operator, .post-content .highlight .hljs-operator, .post-content .highlight .punctuation, .post-content .highlight .hljs-punctuation {',
+            '  color: #d4d4d4 !important;',
+            '}',
+            '/* 行内代码样式 - 深色主题适配 */',
+            '.post-content code {',
+            '  white-space: pre-wrap !important;',
+            '  word-break: break-word !important;',
+            '  overflow-wrap: anywhere !important;',
+            '  background: #2a2a2a !important;',
+            '  padding: 2px 4px !important;',
+            '  border-radius: 4px !important;',
+            '  color: #d4d4d4 !important;',
+            '}',
+            '/* 在窄窗口隐藏行号栏时，让代码块变为完整圆角矩形 */',
+            '@media (max-width: 800px) {',
+            '  .post-content .highlight td.gutter {',
+            '    display: none !important;',
+            '  }',
+            '  .post-content .highlight td.code {',
+            '    width: 100% !important;',
+            '    border-left: 1px solid #2a2a2a !important;',
+            '    border-radius: 6px !important;',
+            '  }',
+            '}',
+            'blockquote {',
+            '  border-left: 4px solid #0a84ff !important;',
+            '  background-color: rgba(44, 44, 46, 0.5) !important;',
+            '  color: #fff !important;',
+            '}',
+            'table {',
+            '  background-color: #2c2c2e !important;',
+            '  color: #fff !important;',
+            '}',
+            'table th, table td {',
+            '  border: 1px solid #48484a !important;',
+            '}',
+            'table th {',
+            '  background-color: #38383a !important;',
+            '}',
+            'img {',
+            '  filter: brightness(0.9) !important;',
+            '}'
+          ];
+        }
+        
+        style.textContent = fontStyles.concat(darkModeStyles).join('\n');
         head.appendChild(style);
       } catch (err) {}
     }
-    // 尝试在加载完成后注入，同时立即尝试一次（若已加载）
+    // 立即执行，不延迟
+    doInject();
+    // 同时监听加载完成事件，确保内容加载后再次应用样式
     if (iframe.addEventListener){
       iframe.addEventListener('load', doInject, { once: true });
     }
-    setTimeout(doInject, 0);
   }
   // 初始 iframe 注入
   injectIframeFontStyle(win.querySelector('.window-content iframe'));
@@ -745,8 +1005,14 @@ function openSurvivalGuideWindow(){
         i.style.backgroundColor = ''; 
         var t0 = i.querySelector('.article-title'); if (t0) t0.style.color = '';
       });
-      item.style.backgroundColor = '#e8e8e8';
-      var t1 = item.querySelector('.article-title'); if (t1) t1.style.color = '#1e66ff';
+      // 根据主题设置选中样式
+      if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+        item.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        var t1 = item.querySelector('.article-title'); if (t1) t1.style.color = 'rgb(10, 132, 255)';
+      } else {
+        item.style.backgroundColor = '#e8e8e8';
+        var t1 = item.querySelector('.article-title'); if (t1) t1.style.color = '#1e66ff';
+      }
       if (window.innerWidth <= 768 && win._mobileSidebarControls){ try { win._mobileSidebarControls.collapseSidebar(); } catch (e) {} }
       var url = item.getAttribute('data-url');
       var idx = parseInt(item.getAttribute('data-index') || '0', 10);
@@ -763,16 +1029,24 @@ function openSurvivalGuideWindow(){
       var _toggle3 = document.querySelector('#language-toggle');
       var _lang3 = (_toggle3 && (_toggle3.value || _toggle3.getAttribute('data-lang'))) || 'en';
       var _readingLabel3 = (_lang3 === 'zh') ? '阅读' : 'Read';
+      // 根据主题设置标题栏样式
+      var isDarkMode = document.querySelector('.macos-theme').classList.contains('dark-theme');
+      var titleBarBgColor = isDarkMode ? '#2c2c2e' : '#f5f5f7';
+      var titleBarBorderColor = isDarkMode ? '#48484a' : '#d1d1d6';
+      var titleTextColor = isDarkMode ? '#fff' : '#333';
+      var metaTextColor = isDarkMode ? '#666' : '#666';
+      var contentBgColor = isDarkMode ? '#3a3a3c' : '#ffffff';
+      
       right.innerHTML = [
-        '<div style="padding:20px; border-bottom:1px solid #eee; word-break:break-word; overflow-wrap:anywhere;">',
-        '  <h3 style="margin:0; line-height:1.4; white-space:normal; word-break:break-word; overflow-wrap:anywhere;">'+(post && post.title || '')+'</h3>',
+        '<div style="padding:20px; border-bottom:1px solid '+titleBarBorderColor+'; word-break:break-word; overflow-wrap:anywhere; background-color:'+titleBarBgColor+';">',
+        '  <h3 style="margin:0; line-height:1.4; white-space:normal; word-break:break-word; overflow-wrap:anywhere; color:'+titleTextColor+';">'+(post && post.title || '')+'</h3>',
         '  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">',
-        '    <div style="color:#666; font-size:12px;">'+(post && post.date || '')+'</div>',
-        '    <div style="color:#666; font-size:12px;">'+(_readText ? (_readingLabel3 + '：' + _readText) : '')+'</div>',
+        '    <div style="color:'+metaTextColor+'; font-size:12px;">'+(post && post.date || '')+'</div>',
+        '    <div style="color:'+metaTextColor+'; font-size:12px;">'+(_readText ? (_readingLabel3 + '：' + _readText) : '')+'</div>',
         '  </div>',
         '</div>',
-        '<div style="flex:1; overflow:hidden;">',
-        '  <iframe src="'+url+'" style="width:100%; height:100%; border:0;"></iframe>',
+        '<div style="flex:1; overflow:hidden; background-color:'+contentBgColor+';">',
+        '  <iframe src="'+url+'" style="width:100%; height:100%; border:0;' + (isDarkMode ? ' background-color:'+contentBgColor+';' : '') + '"></iframe>',
         '</div>'
       ].join('');
       // 对新加载的 iframe 注入字体栈
@@ -1101,7 +1375,7 @@ function openPhotosWindow(){
     '  <div style="width:200px; border-right:1px solid #d1d1d1; background-color:#f5f5f5; display:flex; flex-direction:column;">',
     '    <div style="padding:10px; font-weight:500; color:#666; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">'+categoryTitle+'</div>',
     '    <div style="flex:1; overflow-y:auto;">',
-    '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; background-color:#e8e8e8; color:#0a84ff;" class="photo-nav-item" data-section="photos">'+landscapesText+'</div>',
+    '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="photos">'+landscapesText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="people">'+peopleText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="projects">'+projectsText+'</div>',
     '      <div style="padding:10px 10px 10px 20px; font-size:13px; cursor:pointer; color:#000;" class="photo-nav-item" data-section="aigc">'+aigcText+'</div>',
@@ -1206,22 +1480,29 @@ function openPhotosWindow(){
       toggle.style.zIndex = '30';
       contentEl.appendChild(toggle);
 
-      function collapseSidebar(){
-        collapsed = true;
-        sidebar.style.transform = 'translateX(-100%)';
-        sidebar.style.pointerEvents = 'none';
-        toggle.textContent = '›';
-        toggle.style.display = 'flex';
-        mask.style.display = 'none';
-      }
-      function expandSidebar(){
-        collapsed = false;
-        sidebar.style.transform = 'translateX(0)';
-        sidebar.style.pointerEvents = 'auto';
-        toggle.textContent = '‹';
-        toggle.style.display = 'none';
-        mask.style.display = 'block';
-      }
+      // 统一的侧边栏控制函数 - 消除重复代码
+      const sidebarController = {
+        collapse: function() {
+          collapsed = true;
+          sidebar.style.transform = 'translateX(-100%)';
+          sidebar.style.pointerEvents = 'none';
+          toggle.textContent = '›';
+          toggle.style.display = 'flex';
+          mask.style.display = 'none';
+        },
+        expand: function() {
+          collapsed = false;
+          sidebar.style.transform = 'translateX(0)';
+          sidebar.style.pointerEvents = 'auto';
+          toggle.textContent = '‹';
+          toggle.style.display = 'none';
+          mask.style.display = 'block';
+        }
+      };
+
+      // 保持原有函数名兼容性
+      function collapseSidebar() { sidebarController.collapse(); }
+      function expandSidebar() { sidebarController.expand(); }
 
       // 初始展开：隐藏把手；折叠后显示
       toggle.style.display = collapsed ? 'flex' : 'none';
@@ -1349,11 +1630,59 @@ function openPhotosWindow(){
     if (photoGrid){ photoGrid.innerHTML = buildGridHTML(getSectionList(section), section); }
   }
 
+  // 设置默认选中项样式（根据当前主题）
+  function setDefaultPhotoNavSelection() {
+    // 清除所有项的样式
+    photoNavItems.forEach(function(i){ 
+      i.style.backgroundColor = ''; 
+      // 根据主题设置默认文字颜色
+      if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+        i.style.color = '#fff';
+      } else {
+        i.style.color = '#000';
+      }
+    });
+    
+    // 找到 all-photos 项并设置为选中状态
+    var allPhotosItem = Array.from(photoNavItems).find(function(item) {
+      return item.getAttribute('data-section') === 'all-photos';
+    });
+    
+    if (allPhotosItem) {
+      if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+        // 深色主题：选中状态使用与文章列表相同的样式（0.1透明度背景 + 蓝色文字）
+        allPhotosItem.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        allPhotosItem.style.color = 'rgb(10, 132, 255)';
+      } else {
+        // 浅色主题：不透明背景 + 蓝色文字（与文章列表保持一致）
+        allPhotosItem.style.backgroundColor = '#e8e8e8';
+        allPhotosItem.style.color = '#1e66ff';
+      }
+    }
+  }
+
   photoNavItems.forEach(function(item){
     item.addEventListener('click', function(){
-      photoNavItems.forEach(function(i){ i.style.backgroundColor = ''; i.style.color = '#000'; });
-      item.style.backgroundColor = '#e8e8e8';
-      item.style.color = '#0a84ff';
+      // 清除所有项的样式
+      photoNavItems.forEach(function(i){ 
+        i.style.backgroundColor = ''; 
+        // 根据主题设置默认文字颜色
+        if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+          i.style.color = '#fff';
+        } else {
+          i.style.color = '#000';
+        }
+      });
+      // 设置当前选中项样式
+      if (document.querySelector('.macos-theme').classList.contains('dark-theme')) {
+        // 深色主题：选中状态使用与文章列表相同的样式（0.1透明度背景 + 蓝色文字）
+        item.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        item.style.color = 'rgb(10, 132, 255)';
+      } else {
+        // 浅色主题：不透明背景 + 蓝色文字（与文章列表保持一致）
+        item.style.backgroundColor = '#e8e8e8';
+        item.style.color = '#1e66ff';
+      }
       var section = item.getAttribute('data-section') || 'all-photos';
       updatePhotoContent(section);
       // 选中后自动折叠侧栏（移动端/窄屏体验更佳）
@@ -1361,6 +1690,8 @@ function openPhotosWindow(){
     });
   });
 
+  // 设置默认选中项
+  setDefaultPhotoNavSelection();
   updatePhotoContent('all-photos');
 
   // 网格点击事件：打开模态框查看大图（事件委托，作用域内使用）
@@ -1705,7 +2036,7 @@ function initLottieAnimation(){
   
   // 随机选择一个宠物
   var selectedPet = desktopPets[Math.floor(Math.random() * desktopPets.length)];
-  console.log('当前宠物：', selectedPet.name); // 添加调试日志
+  logger.log('当前宠物：', selectedPet.name); // 添加调试日志
   
   // 创建iframe元素来嵌入Lottie动画
   var iframe = document.createElement('iframe');
@@ -1749,7 +2080,7 @@ function initLottieAnimation(){
     if (window.clickCount === 1) {
       window.clickTimer = setTimeout(function() {
         // 单击事件：显示宠物消息
-        console.log('宠物被单击了');
+        logger.log('宠物被单击了');
         
         // 标记用户已经交互过
         window.isUserInteracted = true;
@@ -1833,7 +2164,7 @@ function initLottieAnimation(){
       }, 300); // 300毫秒内检测双击
     } else if (window.clickCount === 2) {
       // 双击事件：切换宠物
-      console.log('宠物被双击了，切换宠物');
+      logger.log('宠物被双击了，切换宠物');
       
       // 清除单击定时器
       clearTimeout(window.clickTimer);
@@ -1851,14 +2182,14 @@ function initLottieAnimation(){
       
       // 更新选中的宠物
       window.selectedPet = window.desktopPets[nextIndex];
-      console.log('切换到宠物：', window.selectedPet.name);
+      logger.log('切换到宠物：', window.selectedPet.name);
       
       // 如果切换到黑猫，重置黑猫彩蛋相关状态
       if (window.selectedPet.name === '黑猫') {
         window.blackCatEggTriggered = false;
         window.messageCount = 0;
         window.blackCatMessagesShown = [];
-        console.log('已重置黑猫彩蛋状态，可以再次触发彩蛋');
+        logger.log('已重置黑猫彩蛋状态，可以再次触发彩蛋');
       }
       
       // 更新iframe的src
@@ -1930,47 +2261,314 @@ function triggerBlackCatEgg() {
   var body = document.body;
   var macosTheme = document.querySelector('.macos-theme');
   
-  // 将主题切换为纯黑色背景
-  if (macosTheme) {
-    macosTheme.classList.add('dark-theme');
-    
-    // 添加纯黑色背景样式 - 改变背景和所有文字颜色
-    var darkThemeStyle = document.createElement('style');
-    darkThemeStyle.id = 'dark-theme-style';
-    darkThemeStyle.textContent = `
-      .macos-theme.dark-theme,
-      .macos-theme.dark-theme .desktop {
-        background-color: #000 !important;
-        background-image: none !important;
-      }
+  // 将主题切换为深色模式（不是纯黑色）
+    if (macosTheme) {
+      macosTheme.classList.add('dark-theme');
       
-      /* 顶栏菜单文字颜色 */
-      .macos-theme.dark-theme .menu-bar,
-      .macos-theme.dark-theme .menu-item,
-      .macos-theme.dark-theme .menu-right {
+      // 添加深色主题样式 - 使用macOS深色模式的配色
+      var darkThemeStyle = document.createElement('style');
+      darkThemeStyle.id = 'dark-theme-style';
+      darkThemeStyle.textContent = `
+        .macos-theme.dark-theme,
+        .macos-theme.dark-theme .desktop {
+          background-color: #1c1c1e !important;
+          background-image: none !important;
+        }
+        
+        /* 顶栏菜单样式 - 使用半透明深灰色 */
+        .macos-theme.dark-theme .menu-bar {
+          background-color: rgba(28, 28, 30, 0.8) !important;
+          backdrop-filter: blur(20px) saturate(180%) !important;
+          border-bottom: 1px solid rgba(84, 84, 88, 0.5) !important;
+        }
+        
+        .macos-theme.dark-theme .menu-item,
+        .macos-theme.dark-theme .menu-right {
+          color: #fff !important;
+        }
+        
+        /* 欢迎文字和打字机光标颜色 */
+        .macos-theme.dark-theme .welcome-text,
+        .macos-theme.dark-theme .welcome-text .typing-cursor {
+          color: #fff !important;
+        }
+        
+        /* 桌面图标标签颜色 */
+        .macos-theme.dark-theme .icon-label {
+          color: #fff !important;
+        }
+        
+        /* 便签文字颜色 */
+        .macos-theme.dark-theme .sticky-note {
+          color: #fff !important;
+        }
+      
+      /* macOS窗口深色模式样式 */
+      .macos-theme.dark-theme .macos-window {
+        background-color: #2c2c2e !important;
         color: #fff !important;
       }
       
-      /* 欢迎文字和打字机光标颜色 */
-      .macos-theme.dark-theme .welcome-text,
-      .macos-theme.dark-theme .welcome-text .typing-cursor {
+      .macos-theme.dark-theme .window-header {
+        background-color: #2c2c2e !important;
+        border-bottom: 1px solid #48484a !important;
+      }
+      
+      .macos-theme.dark-theme .window-title {
         color: #fff !important;
       }
       
-      /* 桌面图标标签颜色 */
+      .macos-theme.dark-theme .window-content {
+        background-color: #3a3a3c !important;
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme .window-content a {
+        color: #0a84ff !important;
+      }
+      
+      .macos-theme.dark-theme .window-content h1,
+      .macos-theme.dark-theme .window-content h2,
+      .macos-theme.dark-theme .window-content h3,
+      .macos-theme.dark-theme .window-content h4,
+      .macos-theme.dark-theme .window-content h5,
+      .macos-theme.dark-theme .window-content h6 {
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme .window-content p,
+      .macos-theme.dark-theme .window-content span,
+      .macos-theme.dark-theme .window-content div {
+        color: #fff !important;
+      }
+      
+      /* 宠物消息气泡深色模式 */
+      .macos-theme.dark-theme .pet-message-bubble {
+        background-color: #2c2c2e !important;
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme .pet-message-bubble::before {
+        border-top: 8px solid #2c2c2e !important;
+      }
+      
+      /* Dock栏深色模式 */
+      .macos-theme.dark-theme .dock {
+        background-color: rgba(28, 28, 30, 0.8) !important;
+        border: 1px solid rgba(84, 84, 88, 0.5) !important;
+      }
+      
+      /* 桌面图标标签深色模式 */
       .macos-theme.dark-theme .icon-label {
+        background-color: rgba(28, 28, 30, 0.7) !important;
+        color: #fff !important;
+        border: 1px solid rgba(84, 84, 88, 0.5) !important;
+      }
+      
+      /* 便签深色模式 */
+      .macos-theme.dark-theme .sticky-note {
+        background-color: rgba(28, 28, 30, 0.9) !important;
         color: #fff !important;
       }
       
-      /* 便签文字颜色 */
-      .macos-theme.dark-theme .sticky-note {
+      /* Survival Guide 左侧栏深色模式 */
+      .macos-theme.dark-theme #article-list-window .window-content > div:first-child {
+        background-color: #2c2c2e !important;
+        border-right: 1px solid #48484a !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .side-title {
         color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-item {
+        background-color: transparent;
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-item.active {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+      
+      /* 文章列表选中项深色模式样式 - 高优先级 */
+      .macos-theme.dark-theme #article-list-window .article-item[style*="background-color: rgba(255, 255, 255, 0.1)"] {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-item[style*="background-color: rgba(255, 255, 255, 0.1)"] .article-title {
+        color: rgb(10, 132, 255) !important;
+      }
+      
+      /* 文章列表选中项浅色模式样式 - 高优先级 */
+      #article-list-window .article-item[style*="background-color: rgb(232, 232, 232)"] {
+        background-color: #e8e8e8 !important;
+      }
+      
+      #article-list-window .article-item[style*="background-color: rgb(232, 232, 232)"] .article-title {
+        color: #1e66ff !important;
+      }
+      
+      /* 浅色主题下文章列表项悬停和选中状态 */
+      #article-list-window .article-item:hover {
+        background-color: #f5f5f5;
+      }
+      
+      #article-list-window .article-item.active {
+        background-color: #e8e8e8;
+      }
+      
+      /* 确保选中状态的文字颜色 - 高优先级 */
+      .macos-theme.dark-theme #article-list-window .article-title[style*="color:rgb(10, 132, 255)"] {
+        color: rgb(10, 132, 255) !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-title {
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-meta {
+        color: #aaa !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .article-badges .mac-badge {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+      }
+      
+      /* Survival Guide 右侧内容栏深色模式 */
+      .macos-theme.dark-theme #article-list-window .window-content > div:nth-child(2) {
+        background-color: #2c2c2e !important;
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .window-content > div:nth-child(2) > div:first-child {
+        background-color: #2c2c2e !important;
+        border-bottom: 1px solid #48484a !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .window-content > div:nth-child(2) h3 {
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .window-content > div:nth-child(2) > div:first-child > div > div {
+        color: #aaa !important;
+      }
+      
+      /* 移动端侧栏深色模式 */
+      .macos-theme.dark-theme #article-list-window .window-content > div:first-child[style*="position: absolute"] {
+        background-color: rgba(28, 28, 30, 0.9) !important;
+        border-right: 1px solid #48484a !important;
+      }
+      
+      .macos-theme.dark-theme #article-list-window .window-content button[style*="position: absolute"] {
+        background-color: rgba(28, 28, 30, 0.9) !important;
+        color: #fff !important;
+        border-right: 1px solid #48484a !important;
+        border-top: 1px solid #48484a !important;
+        border-bottom: 1px solid #48484a !important;
+      }
+      
+      /* iframe内容深色模式 */
+      .macos-theme.dark-theme #article-list-window iframe {
+        background-color: #3a3a3c !important;
+      }
+      
+      /* 汉堡菜单图标深色模式 */
+      .macos-theme.dark-theme .menu-right .hamburger line {
+        stroke: #fff !important;
+      }
+      
+      /* 相册窗口深色模式样式 */
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child {
+        background-color: #2c2c2e !important;
+        border-right: 1px solid #48484a !important;
+      }
+      
+      /* 相册项默认样式 - 深色主题 */
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child .photo-nav-item {
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child .photo-nav-item[data-section="photos"] {
+        color: #fff !important;
+      }
+      
+      /* 相册列表选中项深色模式样式 - 最高优先级 */
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child .photo-nav-item[style*="background-color: rgba(255, 255, 255, 0.1)"] {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: #0a84ff !important;
+      }
+      
+      /* 确保选中状态的文字颜色 - 最高优先级 */
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child .photo-nav-item[style*="color:rgb(10, 132, 255)"] {
+        color: #0a84ff !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child .photo-nav-item[style*="color: #0a84ff"] {
+        color: #0a84ff !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:first-child > div:first-child {
+        color: #aaa !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:nth-child(2) > div:first-child {
+        background-color: #2c2c2e !important;
+        border-bottom: 1px solid #48484a !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:nth-child(2) .photo-toolbar-title {
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:nth-child(2) > div:first-child > div:last-child > div {
+        background-color: #2c2c2e !important;
+        border: 1px solid #48484a !important;
+        color: #fff !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:nth-child(2) > div:last-child {
+        background-color: #2c2c2e !important;
+      }
+      
+      .macos-theme.dark-theme #photos-window .window-content > div:nth-child(2) > div:last-child > div[style*="color:#666"] {
+        color: #aaa !important;
+      }
+      
+      /* 相册列表项悬停深色模式样式 - 与选中状态统一底色 */
+      .macos-theme.dark-theme #photos-window .photo-nav-item:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+      }
+      
+      /* 浅色主题下相册列表选中项样式 - 最高优先级 */
+      #photos-window .window-content > div:first-child .photo-nav-item[style*="background-color: rgb(232, 232, 232)"] {
+        background-color: #e8e8e8 !important;
+        color: #1e66ff !important;
+      }
+      
+      /* 确保浅色主题下选中状态的文字颜色 - 最高优先级 */
+      #photos-window .window-content > div:first-child .photo-nav-item[style*="color:rgb(30, 102, 255)"] {
+        color: #1e66ff !important;
+      }
+      
+      #photos-window .window-content > div:first-child .photo-nav-item[style*="color: #1e66ff"] {
+        color: #1e66ff !important;
       }
     `;
     document.head.appendChild(darkThemeStyle);
+    
+    // 重新注入所有iframe的样式
+    var iframes = document.querySelectorAll('#article-list-window iframe');
+    iframes.forEach(function(iframe) {
+      injectIframeFontStyle(iframe);
+    });
   }
   
-  console.log('黑猫彩蛋已触发！背景已切换为纯黑色，文字颜色已调整为白色。');
+  logger.log('黑猫彩蛋已触发！背景已切换为纯黑色，文字颜色已调整为白色。');
 }
 
 // 显示卡在黑色页面的消息
@@ -1983,11 +2581,16 @@ function showStuckMessage() {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    background-color: #2c2c2e;
     color: white;
     font-size: 24px;
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     text-align: center;
     z-index: 10000;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    border: 1px solid #48484a;
   `;
   stuckMessage.innerHTML = '喵喵喵你个喵喵，喵了个喵的~ 喵~<br><br><small>双击宠物切换到下一只，即可退出黑猫模式</small>';
   
@@ -2017,7 +2620,7 @@ function exitBlackCatMode() {
   // 重置黑猫彩蛋状态
   window.blackCatEggTriggered = false;
   
-  console.log('已退出黑猫模式，恢复正常主题。');
+  logger.log('已退出黑猫模式，恢复正常主题。');
 }
 
 // 数鱼功能
@@ -2353,10 +2956,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
     // 新增：照片模式渲染（收缩态显示提示语；展开态显示左侧圆形照片）
     function renderPhoto(expanded){
-      console.log('=== 进入照片模式渲染 ===');
-      console.log('展开状态:', expanded);
+      logger.log('=== 进入照片模式渲染 ===');
+      logger.log('展开状态:', expanded);
       var pillContent = menuBar.querySelector('.pill-content');
-      if (!pillContent) { console.log('未找到pill-content元素'); return; }
+      if (!pillContent) { logger.log('未找到pill-content元素'); return; }
       var titleEl = pillContent.querySelector('.pill-title');
       var metaEl = pillContent.querySelector('.pill-meta');
       var badgesEl = pillContent.querySelector('.pill-badges');
@@ -2384,7 +2987,7 @@ if (!pillPhoto.contains(photoImg)) {
         nextPhotoUrl = null; // 用掉预加载的图片
         if (photoImg && url) { photoImg.src = url; }
 // 照片模式下点击事件已迁移到灵动岛主容器，移除照片容器单独绑定
-if (pillPhoto) { pillPhoto.style.pointerEvents = 'none'; console.log('灵动岛照片容器事件已迁移到主容器'); }
+if (pillPhoto) { pillPhoto.style.pointerEvents = 'none'; logger.log('灵动岛照片容器事件已迁移到主容器'); }
         // 同步底部磨砂背景图
         var pillBgFill = menuBar.querySelector('.pill-bg .fill');
         if (pillBgFill && url) { pillBgFill.style.backgroundImage = 'url("'+url+'")'; }
