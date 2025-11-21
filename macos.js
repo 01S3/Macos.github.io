@@ -2477,6 +2477,11 @@ function triggerBlackCatEgg() {
         background-color: #3a3a3c !important;
       }
       
+      /* 深色主题徽标颜色与浅色主题保持一致 */
+      .macos-theme.dark-theme .pill-logo {
+        background: #2ecc71 !important;
+      }
+      
       /* 汉堡菜单图标深色模式 */
       .macos-theme.dark-theme .menu-right .hamburger line {
         stroke: #fff !important;
